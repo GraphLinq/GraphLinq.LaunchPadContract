@@ -1,0 +1,27 @@
+{
+  "name": "graphlinq_contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx hardhat compile"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unforkableco/graphlinq_contracts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/unforkableco/graphlinq_contracts/issues"
+  },
+  "homepage": "https://github.com/unforkableco/graphlinq_contracts#readme",
+  "devDependencies": {
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^5.0.2",
+    "@uniswap/v3-periphery": "^1.4.4"
+  }
+}
