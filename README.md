@@ -1,66 +1,20 @@
-## Foundry
+# Project Name: GraphLinq Contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Static Analysis Report
 
-Foundry consists of:
+This document details the results of the static analysis performed on the Solidity smart contracts in this project using Solhint and Slither. The issues identified have been reviewed and acknowledged.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+| Analyser | Issue                                                                                           | File                               | Status            |
+|----------|-------------------------------------------------------------------------------------------------|------------------------------------|-------------------|
+| Solhint  | Contract has 19 state declarations but allowed no more than 15                                   | `src/Fundraiser.sol`               | Acknowledged      |
+| Slither  | Unused return value by `positionManager.mint(params)`                                            | `src/Fundraiser.sol`               | Acknowledged      |
+| Slither  | Reentrancy in `Fundraiser.contribute(uint256)`                                                   | `src/Fundraiser.sol`               | nonReentrant      |
+| Slither  | Reentrancy in `Fundraiser.finalize()`                                                            | `src/Fundraiser.sol`               | nonReentrant      |
+| Slither  | Reentrancy in `Fundraiser.setFailed()`                                                           | `src/Fundraiser.sol`               | nonReentrant      |
+| Slither  | Reentrancy in `FundraiserFactory.createFundraiser(bytes,bytes,uint8)`                            | `src/FundraiserFactory.sol`        | nonReentrant      |
+| Slither  | Different Solidity version constraints are used across files                                     | Various files                      | Acknowledged      |
+| Slither  | Unused import `{IERC165}` in `IERC1363.sol`                                                      | `lib/openzeppelin-contracts/`      | Acknowledged      |
+| Slither  | Unused import `{IERC20}` in `IERC1363.sol`                                                       | `lib/openzeppelin-contracts/`      | Acknowledged      |
+| Slither  | Unused import `{IERC20}` in `IERC20.sol`                                                         | `lib/openzeppelin-contracts/`      | Acknowledged      |
+| Slither  | Unused import `{IERC165}` in `IERC165.sol`                                                       | `lib/openzeppelin-contracts/`      | Acknowledged      |
 
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```

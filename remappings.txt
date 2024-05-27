@@ -1,0 +1,4 @@
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@openzeppelin/contracts-upgradable/=lib/openzeppelin-contracts-upgradeable/contracts/
+@uniswap/=lib/uniswap-v3-periphery/
+forge-std/=lib/forge-std/src/

@@ -1,0 +1,11 @@
+{
+  "detectors_to_exclude": "naming-convention,solc-version,timestamp,events-maths",
+  "exclude_informational": false,
+  "exclude_low": false,
+  "exclude_medium": false,
+  "exclude_high": false,
+  "disable_color": false,
+  "filter_paths": "(lib/|test/)",
+  "legacy_ast": false
+  }
+  
