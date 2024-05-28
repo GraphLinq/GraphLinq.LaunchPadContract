@@ -1,20 +1,37 @@
 # Project Name: GraphLinq Contracts
 
+## Setting up the repository
+
+### Initialize and update submodules
+git submodule update --init --recursive
+
+### Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+### Install project dependencies
+forge install
+
+## Run static analysis
+
+./lint.sh
+
+## Run build
+
+forge build
+
+## Run Tests
+
+forge test --fork-url https://mainnet.infura.io/v3/1259beac706140b38d611bca1f47e461 --fork-block-number 19946000
+
 ## Static Analysis Report
 
 This document details the results of the static analysis performed on the Solidity smart contracts in this project using Solhint and Slither. The issues identified have been reviewed and acknowledged.
 
-| Analyser | Issue                                                                                           | File                               | Status            |
-|----------|-------------------------------------------------------------------------------------------------|------------------------------------|-------------------|
-| Solhint  | Contract has 19 state declarations but allowed no more than 15                                   | `src/Fundraiser.sol`               | Acknowledged      |
-| Slither  | Unused return value by `positionManager.mint(params)`                                            | `src/Fundraiser.sol`               | Acknowledged      |
-| Slither  | Reentrancy in `Fundraiser.contribute(uint256)`                                                   | `src/Fundraiser.sol`               | nonReentrant      |
-| Slither  | Reentrancy in `Fundraiser.finalize()`                                                            | `src/Fundraiser.sol`               | nonReentrant      |
-| Slither  | Reentrancy in `Fundraiser.setFailed()`                                                           | `src/Fundraiser.sol`               | nonReentrant      |
-| Slither  | Reentrancy in `FundraiserFactory.createFundraiser(bytes,bytes,uint8)`                            | `src/FundraiserFactory.sol`        | nonReentrant      |
-| Slither  | Different Solidity version constraints are used across files                                     | Various files                      | Acknowledged      |
-| Slither  | Unused import `{IERC165}` in `IERC1363.sol`                                                      | `lib/openzeppelin-contracts/`      | Acknowledged      |
-| Slither  | Unused import `{IERC20}` in `IERC1363.sol`                                                       | `lib/openzeppelin-contracts/`      | Acknowledged      |
-| Slither  | Unused import `{IERC20}` in `IERC20.sol`                                                         | `lib/openzeppelin-contracts/`      | Acknowledged      |
-| Slither  | Unused import `{IERC165}` in `IERC165.sol`                                                       | `lib/openzeppelin-contracts/`      | Acknowledged      |
-
+| Linter  | Issue                                                                                                       | Severity       | File                                                           | Status      |
+|---------|-------------------------------------------------------------------------------------------------------------|----------------|----------------------------------------------------------------|-------------|
+| Slither | Reentrancy in `Fundraiser.setFailed()`                                                                      | High           | `src/Fundraiser.sol#144-152`                                   | Alleviated  |
+| Slither | Ignored return value by `positionManager.createAndInitializePoolIfNecessary`                                | Medium         | `src/Fundraiser.sol#256-260`                                   | Acknowledged |
+| Slither | Reentrancy in `Fundraiser.contribute(uint256)`                                                              | High           | `src/Fundraiser.sol#106-116`                                   | Alleviated  |
+| Slither | Reentrancy in `Fundraiser.finalize()`                                                                       | High           | `src/Fundraiser.sol#121-139`                                   | Alleviated  |
+| Slither | Reentrancy in `FundraiserFactory.createFundraiser(bytes,bytes,uint8)`                                       | High           | `src/FundraiserFactory.sol#63-111`                             | Alleviated  |

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "openzeppelin-contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
+import "openzeppelin-contracts/access/Ownable.sol";
+import "openzeppelin-contracts/utils/ReentrancyGuard.sol";
+import "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
+import "openzeppelin-contracts/utils/math/Math.sol";
 
 import "./interfaces/IVesting.sol";
 import "./interfaces/INonfungiblePositionManager.sol";
@@ -14,21 +15,34 @@ import "./interfaces/ICampaign.sol";
 contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    struct ProjectInformation {
+        string projectName;
+        string description;
+        string websiteLink;
+    }
+
+    struct FundraiserParams {
+        address saleToken;
+        address raiseToken;
+        string projectName;
+        string description;
+        string websiteLink;
+        ICampaign campaign;
+        uint256 vestingStartDelta;
+        uint256 vestingDuration;
+        address positionManager;
+        IVesting vesting;
+    }
+
     // Public state variables
-    string public projectName;
-    string public description;
-    string public websiteLink;
+    ProjectInformation public info;
     uint256 public vestingStartDelta;
     uint256 public vestingDuration; // Set to 0 for no vesting
     
     uint256 public raisedAmount; // Total raised amount in raised tokens
     uint256 public soldAmount; // Total amount of tokens sold
-    bool public finalized;
-    bool public failed;
     uint256 public finalizedTimestamp;
     
-    bool public swapPairCreated;
-
     IERC20 public saleToken;
     IERC20 public raiseToken;
     ICampaign public campaign;
@@ -39,13 +53,17 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     mapping(address => uint256) public purchasedTokens;
     mapping(address => bool) public claimed; // To track if a participant has claimed their tokens
 
+    // Enum to track the state of the contract
+    enum FundraiserState { Active, Finalized, Failed, SwapPairCreated }
+    FundraiserState public state;
+
     // Events
     event Contribution(address indexed contributor, uint256 amount);
     event Finalized();
     event Claimed(address indexed claimer, uint256 amount);
     event FundsClaimed(address indexed claimer, uint256 amount);
     event Failed();
-    event SwapPairInitialized(uint256 tokenId);
+    event SwapPairInitialized(uint256 tokenId, uint256 liquidity);
 
     /**
      * @dev Constructor to initialize the fundraiser contract
@@ -58,49 +76,27 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     /**
      * @dev Initializes the fundraiser contract
      * Typically called by the factory contract
-     * @param _saleToken The token to be sold
-     * @param _raiseToken The token to be raised
-     * @param _projectName The name of the project
-     * @param _description The description of the project
-     * @param _websiteLink The website link of the project
-     * @param _campaign The campaign contract to be used
-     * @param _vestingStartDelta The start of the vesting in seconds after the end of the fundraising
-     * @param _vestingDuration The duration of the vesting in seconds
-     * @param _positionManager The Uniswap V3 position manager contract
-     * @param _vesting The vesting contract that is created only if vesting is enabled
+     * @param params The parameters for initializing the fundraiser
     */
-    function initialize(
-        address _saleToken,
-        address _raiseToken,
-        string memory _projectName,
-        string memory _description,
-        string memory _websiteLink,
-        ICampaign _campaign,
-        uint256 _vestingStartDelta,
-        uint256 _vestingDuration,
-        address _positionManager,
-        IVesting _vesting
-    ) public initializer {
-
+    function initialize(FundraiserParams memory params) public initializer {
         // Sanitize inputs
-        require(_saleToken != address(0), "Sale token address cannot be zero");
-        require(_raiseToken != address(0), "Raise token address cannot be zero");
-        require(_positionManager != address(0), "Position manager address cannot be zero");
-        require(_campaign != ICampaign(address(0)), "Campaign address cannot be zero");
-        require(_vestingDuration == 0 || _vesting != IVesting(address(0))
-        ,"Vesting address cannot be zero if vesting is enabled");
+        require(params.saleToken != address(0), "Sale token address cannot be zero");
+        require(params.raiseToken != address(0), "Raise token address cannot be zero");
+        require(params.positionManager != address(0), "Position manager address cannot be zero");
+        require(params.campaign != ICampaign(address(0)), "Campaign address cannot be zero");
+        require(params.vestingDuration == 0 || params.vesting != IVesting(address(0)),
+        "Vesting address cannot be zero if vesting is enabled");
 
-        saleToken = IERC20(_saleToken);
-        raiseToken = IERC20(_raiseToken);
-        projectName = _projectName;
-        description = _description;
-        websiteLink = _websiteLink;
-        campaign = _campaign;
-        positionManager = INonfungiblePositionManager(_positionManager);
+        saleToken = IERC20(params.saleToken);
+        raiseToken = IERC20(params.raiseToken);
+        info = ProjectInformation(params.projectName, params.description, params.websiteLink);
+        campaign = params.campaign;
+        positionManager = INonfungiblePositionManager(params.positionManager);
 
-        vestingDuration = _vestingDuration;
-        vestingStartDelta = _vestingStartDelta;
-        vesting = IVesting(_vesting);
+        vestingDuration = params.vestingDuration;
+        vestingStartDelta = params.vestingStartDelta;
+        vesting = IVesting(params.vesting);
+        state = FundraiserState.Active;
     }
 
     /**
@@ -108,6 +104,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
      * @param amount The amount of raise tokens to contribute
     */
     function contribute(uint256 amount) public nonReentrant() {
+        require(state == FundraiserState.Active, "Fundraising is not active");
         uint256 tokens = campaign.contribute(amount, msg.sender);
         contributions[msg.sender] += amount;
         purchasedTokens[msg.sender] += tokens;
@@ -122,9 +119,8 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
      * @dev Finalize the fundraising campaign when the goal is reached
     */
     function finalize() public onlyOwner nonReentrant() {
-        require(!finalized, "Already finalized");
-        require(!failed, "Fundraising failed");
-        finalized = true;
+        require(state == FundraiserState.Active, "Fundraising not active");
+        state = FundraiserState.Finalized;
         campaign.handleFinalization(); // Check if the campaign is successful
         
         // Transfer raised tokens to the owner
@@ -146,9 +142,9 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
      * @dev Set the fundraising as failed if the campaign type allows so
     */
     function setFailed() public onlyOwner nonReentrant() {
-        require(!finalized, "Fundraising already finalized");
+        require(state == FundraiserState.Active, "Fundraising not active");
         campaign.handleFailure();
-        failed = true;
+        state = FundraiserState.Failed;
         // Send back the sale tokens to the owner
         uint256 saleTokenBalance = saleToken.balanceOf(address(this));
         emit Failed();
@@ -159,7 +155,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
      * @dev Claim raise tokens back if the fundraising is set as failed
     */
     function claimFunds() public {
-        require(failed, "Raise not failed");
+        require(state == FundraiserState.Failed, "Raise not failed");
         require(!claimed[msg.sender], "Funds already claimed");
         claimed[msg.sender] = true;
 
@@ -172,8 +168,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
      * @dev Claim the tokens after the fundraising is finalized
     */
     function claimTokens() public nonReentrant() {
-        require(finalized, "Fundraising not finalized");
-        require(swapPairCreated, "Swap pair not created");
+        require(state == FundraiserState.SwapPairCreated, "Swap pair not created");
         require(!claimed[msg.sender], "Tokens already claimed");
         claimed[msg.sender] = true;
         
@@ -206,6 +201,24 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         return (requiredSaleTokens, raiseTokenAmount);
     }
 
+    function _getTokenOrder(address tokenA, address tokenB, uint256 tokenAAmount, uint256 tokenBAmount)
+    private pure returns (address token0_, address token1_, uint256 token0Amount_, uint256 token1Amount_) {
+        require(tokenA != tokenB, "Tokens must be different");
+
+        // Determine token0 and token1 based on the address comparison
+        if (tokenA < tokenB) {
+            token0_ = tokenA;
+            token1_ = tokenB;
+            token0Amount_ = tokenAAmount;
+            token1Amount_ = tokenBAmount;
+        } else {
+            token0_ = tokenB;
+            token1_ = tokenA;
+            token0Amount_ = tokenBAmount;
+            token1Amount_ = tokenAAmount;
+        }
+    }
+
     /**
     * @dev Initialize the swap pair after the fundraising is finalized
     * @param poolFee The fee to be charged by the pool
@@ -213,12 +226,8 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     * @param tickUpper The upper tick of the pool
     */
     function initSwapPair(uint24 poolFee, int24 tickLower, int24 tickUpper) public onlyOwner nonReentrant() {
-        require(finalized, "Fundraising not finalized");
-        require(!swapPairCreated, "Swap pair already created");
-        swapPairCreated = true;
-
-        uint256 pricePerToken = campaign.pricePerToken();
-        require(pricePerToken > 0, "Price per token must be greater than zero");
+        require(state == FundraiserState.Finalized, "Fundraising not finalized");
+        state = FundraiserState.SwapPairCreated;
 
         uint256 saleTokenBalance = saleToken.balanceOf(address(this));
         uint256 raiseTokenBalance = raiseToken.balanceOf(address(this));
@@ -233,28 +242,49 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         (uint256 requiredSaleTokens, uint256 requiredRaiseTokens) = getRequiredAmountsForLiquidity(raiseTokenBalance);
         require(requiredSaleTokens <= availableSaleTokens, "Not enough liquidity to create the swap pair");
 
-        // Approve the position manager to manage tokens
-        saleToken.safeIncreaseAllowance(address(positionManager), requiredSaleTokens);
-        raiseToken.safeIncreaseAllowance(address(positionManager), requiredRaiseTokens);
+        // Get the token order and use the token0 and 1 format after that
+        (address token0,
+        address token1,
+        uint256 token0Amount,
+        uint256 token1Amount) = _getTokenOrder(
+            address(saleToken),
+            address(raiseToken),
+            requiredSaleTokens,
+            requiredRaiseTokens);
 
-        // Create the pool and add liquidity
+        // Compute sqrtPriceX96 and init the pool
+        positionManager.createAndInitializePoolIfNecessary(
+            token0,
+            token1,
+            poolFee,
+            uint160(Math.sqrt((token0Amount * (10 ** 18)) / token1Amount) * (2 ** 96)));
+
+        // Approve the position manager to manage tokens
+        IERC20(token0).safeIncreaseAllowance(address(positionManager), token0Amount);
+        IERC20(token1).safeIncreaseAllowance(address(positionManager), token1Amount);
+
+        // add liquidity
         INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
-            token0: address(saleToken),
-            token1: address(raiseToken),
+            token0: token0,
+            token1: token1,
             fee: poolFee,
             tickLower: tickLower,
             tickUpper: tickUpper,
-            amount0Desired: requiredSaleTokens,
-            amount1Desired: requiredRaiseTokens,
+            amount0Desired: token0Amount,
+            amount1Desired: token1Amount,
             amount0Min: 0,
             amount1Min: 0,
-            recipient: owner(),
+            recipient: msg.sender,
             deadline: block.timestamp
         });
 
-        (uint256 tokenId,,,) = positionManager.mint(params);
+        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(params);
+        // reimburse unutilized tokens
+        if(amount0 < token0Amount)
+            IERC20(token0).safeTransfer(msg.sender, token0Amount - amount0);
+        if(amount1 < token1Amount)
+            IERC20(token1).safeTransfer(msg.sender, token1Amount - amount1);
 
-        emit SwapPairInitialized(tokenId);
+        emit SwapPairInitialized(tokenId, liquidity);
     }
-
 }

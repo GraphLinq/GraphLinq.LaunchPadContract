@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./Fundraiser.sol";
 import "./Vesting.sol";
@@ -17,8 +17,24 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable {
     // State variables
     uint8 public campaignID;
     address constant public POSITION_MANAGER = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
-    
+
     mapping(uint8 => ICampaignFactory) public campaigns;
+
+    /**
+     * @dev Struct to hold parameters for the Fundraiser initialization
+     */
+    struct FundraiserParams {
+        address saleToken;
+        address raiseToken;
+        string projectName;
+        string description;
+        string websiteLink;
+        ICampaign campaign;
+        uint256 vestingStartDelta;
+        uint256 vestingDuration;
+        address positionManager;
+        IVesting vesting;
+    }
 
     /**
      * @dev Initializes the factory contract
@@ -73,19 +89,22 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable {
             vesting = IVesting(new Vesting(saleToken, address(fundraiser)));
         }
 
+        // Initialize the parameters struct
+        Fundraiser.FundraiserParams memory params = Fundraiser.FundraiserParams({
+            saleToken: saleToken,
+            raiseToken: raiseToken,
+            projectName: projectName,
+            description: description,
+            websiteLink: websiteLink,
+            campaign: campaign,
+            vestingStartDelta: vestingStartDelta,
+            vestingDuration: vestingDuration,
+            positionManager: POSITION_MANAGER,
+            vesting: vesting
+        });
+
         // Initialize the fundraiser
-        fundraiser.initialize(
-            saleToken,
-            raiseToken,
-            projectName,
-            description,
-            websiteLink,
-            campaign,
-            vestingStartDelta,
-            vestingDuration,
-            POSITION_MANAGER,
-            vesting
-        );
+        fundraiser.initialize(params);
 
         emit FundraiserCreated(address(fundraiser));
         return address(fundraiser);

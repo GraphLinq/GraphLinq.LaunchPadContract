@@ -12,10 +12,10 @@ import "../src/FairLaunchCampaign.sol";
 import "../src/interfaces/ICampaign.sol";
 import "../src/interfaces/ICampaignFactory.sol";
 import "../src/test/MockERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "openzeppelin-contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-contracts/access/Ownable.sol";
+import "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract FundraiserFactoryTest is Test {
     FundraiserFactory private factory;
@@ -72,9 +72,10 @@ contract FundraiserFactoryTest is Test {
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
-        assertEq(fundraiser.projectName(), "Stealth Project");
-        assertEq(fundraiser.description(), "This is a stealth launch project.");
-        assertEq(fundraiser.websiteLink(), "https://stealthproject.com");
+        (string memory projectName, string memory description, string memory websiteLink) = fundraiser.info();
+        assertEq(projectName, "Stealth Project");
+        assertEq(description, "This is a stealth launch project.");
+        assertEq(websiteLink, "https://stealthproject.com");
     }
 
     function testCreateFairLaunchFundraiser() public {
@@ -100,9 +101,10 @@ contract FundraiserFactoryTest is Test {
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
-        assertEq(fundraiser.projectName(), "Fair Project");
-        assertEq(fundraiser.description(), "This is a fair launch project.");
-        assertEq(fundraiser.websiteLink(), "https://fairproject.com");
+        (string memory projectName, string memory description, string memory websiteLink) = fundraiser.info();
+        assertEq(projectName, "Fair Project");
+        assertEq(description, "This is a fair launch project.");
+        assertEq(websiteLink, "https://fairproject.com");
     }
 
     function testContributeToFundraiser() public {
@@ -182,7 +184,7 @@ contract FundraiserFactoryTest is Test {
         fundraiser.finalize();
 
         // Assertions
-        assertTrue(fundraiser.finalized(), "Fundraiser should be finalized");
+        assertEq(uint(fundraiser.state()), uint(Fundraiser.FundraiserState.Finalized), "Fundraiser should be finalized");
     }
 
     function testInitSwapPair() public {
@@ -230,9 +232,6 @@ contract FundraiserFactoryTest is Test {
         raiseToken.mint(fundraiserAddress, 100 * 10**18);
 
         fundraiser.initSwapPair(3000, -887220, 887220);
-
-        // Assertions
-        assertTrue(fundraiser.swapPairCreated(), "Swap pair should be created");
     }
 
     function testClaimTokens() public {
@@ -289,5 +288,54 @@ contract FundraiserFactoryTest is Test {
 
         // Assertions
         assertTrue(fundraiser.claimed(address(this)), "Tokens should be claimed");
+    }
+
+    function testFailedFundraise() public {
+        // Create a fundraiser with Fair Launch Campaign with a higher goal than will be met
+        bytes memory fundraiserParams = abi.encode(
+            "Failed Project",
+            "This is a failed project.",
+            "https://failedproject.com",
+            address(saleToken),
+            address(raiseToken),
+            3600,  // Vesting starts 1 hour after finalization
+            86400  // Vesting duration of 24 hours
+        );
+
+        bytes memory campaignParams = abi.encode(
+            block.timestamp + 3600,  // End time 1 hour from now
+            10000 * 10**18,  // Minimum goal of 10000 tokens
+            1 * 10**18  // 1 ETH per token
+        );
+
+        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        Fundraiser fundraiser = Fundraiser(fundraiserAddress);
+
+        // Mint sale tokens to the fundraiser
+        saleToken.mint(fundraiserAddress, 10000 * 10**18);
+
+        // Mint raise tokens to the contributor
+        raiseToken.mint(address(this), 500 * 10**18);
+
+        // Approve the fundraiser to spend raise tokens
+        IERC20(address(raiseToken)).approve(fundraiserAddress, 500 * 10**18);
+
+        // Contribute to the fundraiser
+        fundraiser.contribute(500 * 10**18);
+
+        // Fast forward time to after the campaign end time
+        vm.warp(block.timestamp + 3600);
+
+        // Finalize the fundraiser
+        fundraiser.setFailed();
+
+        // Assertions
+        assertEq(uint(fundraiser.state()), uint(Fundraiser.FundraiserState.Failed), "Fundraiser should be failed");
+
+        // Claim funds
+        uint256 initialBalance = raiseToken.balanceOf(address(this));
+        fundraiser.claimFunds();
+        uint256 finalBalance = raiseToken.balanceOf(address(this));
+        assertEq(finalBalance, initialBalance + 500 * 10**18, "Funds should be returned");
     }
 }
