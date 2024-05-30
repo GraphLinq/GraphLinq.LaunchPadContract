@@ -59,7 +59,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
-            86400  // Vesting duration of 24 hours
+            86400,  // Vesting duration of 24 hours
+            3000    // pool fee
         );
 
         bytes memory campaignParams = abi.encode(
@@ -87,7 +88,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
-            86400  // Vesting duration of 24 hours
+            86400,  // Vesting duration of 24 hours
+            3000    // pool fee
         );
 
         bytes memory campaignParams = abi.encode(
@@ -116,7 +118,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
-            86400  // Vesting duration of 24 hours
+            86400, // Vesting duration of 24 hours
+            3000   // pool fee
         );
 
         bytes memory campaignParams = abi.encode(
@@ -153,7 +156,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
-            86400  // Vesting duration of 24 hours
+            86400,  // Vesting duration of 24 hours
+            3000    // pool fee
         );
 
         bytes memory campaignParams = abi.encode(
@@ -196,7 +200,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
-            86400  // Vesting duration of 24 hours
+            86400,  // Vesting duration of 24 hours
+            3000
         );
 
         bytes memory campaignParams = abi.encode(
@@ -231,7 +236,7 @@ contract FundraiserFactoryTest is Test {
         saleToken.mint(fundraiserAddress, requiredSaleTokens);
         raiseToken.mint(fundraiserAddress, 100 * 10**18);
 
-        fundraiser.initSwapPair(3000, -887220, 887220);
+        fundraiser.initSwapPair(-887220, 887220);
     }
 
     function testClaimTokens() public {
@@ -243,7 +248,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
-            86400  // Vesting duration of 24 hours
+            86400,  // Vesting duration of 24 hours
+            3000    // pool fee
         );
 
         bytes memory campaignParams = abi.encode(
@@ -278,7 +284,7 @@ contract FundraiserFactoryTest is Test {
         saleToken.mint(fundraiserAddress, requiredSaleTokens);
         raiseToken.mint(fundraiserAddress, 100 * 10**18);
 
-        fundraiser.initSwapPair(3000, -887220, 887220);
+        fundraiser.initSwapPair(-887220, 887220);
 
         // Fast forward time to after the vesting start
         vm.warp(block.timestamp + 3600);
@@ -348,7 +354,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,
-            86400
+            86400,
+            3000
         );
 
         bytes memory campaignParams = abi.encode(
@@ -385,7 +392,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,
-            86400
+            86400,
+            3000
         );
 
         bytes memory campaignParams = abi.encode(
@@ -420,7 +428,7 @@ contract FundraiserFactoryTest is Test {
         saleToken.mint(fundraiserAddress, requiredSaleTokens);
         raiseToken.mint(fundraiserAddress, 100 * 10**18);
 
-        fundraiser.initSwapPair(3000, -887220, 887220);
+        fundraiser.initSwapPair(-887220, 887220);
 
         // Fast forward time to after the vesting start
         vm.warp(block.timestamp + 3600);
@@ -441,7 +449,8 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             0,  // No vesting
-            0   // No vesting duration
+            0,   // No vesting duration
+            3000
         );
 
         bytes memory campaignParams = abi.encode(
@@ -476,7 +485,7 @@ contract FundraiserFactoryTest is Test {
         saleToken.mint(fundraiserAddress, requiredSaleTokens);
         raiseToken.mint(fundraiserAddress, 100 * 10**18);
 
-        fundraiser.initSwapPair(3000, -887220, 887220);
+        fundraiser.initSwapPair(-887220, 887220);
 
         // Claim tokens
         fundraiser.claimTokens();

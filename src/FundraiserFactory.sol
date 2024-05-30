@@ -34,6 +34,7 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable {
         uint256 vestingDuration;
         address positionManager;
         IVesting vesting;
+        uint24 poolFee;
     }
 
     /**
@@ -72,8 +73,9 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable {
             address saleToken,
             address raiseToken,
             uint256 vestingStartDelta,
-            uint256 vestingDuration
-        ) = abi.decode(fundraiserParams, (string, string, string, address, address, uint256, uint256));
+            uint256 vestingDuration,
+            uint24 poolFee
+        ) = abi.decode(fundraiserParams, (string, string, string, address, address, uint256, uint256, uint24));
 
         require(campaignTypeID < campaignID, "Invalid campaign type");
 
@@ -100,7 +102,8 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable {
             vestingStartDelta: vestingStartDelta,
             vestingDuration: vestingDuration,
             positionManager: POSITION_MANAGER,
-            vesting: vesting
+            vesting: vesting,
+            poolFee: poolFee
         });
 
         // Initialize the fundraiser

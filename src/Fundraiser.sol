@@ -32,6 +32,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         uint256 vestingDuration;
         address positionManager;
         IVesting vesting;
+        uint24 poolFee;
     }
 
     // Public state variables
@@ -56,6 +57,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     // Enum to track the state of the contract
     enum FundraiserState { Active, Finalized, Failed, SwapPairCreated }
     FundraiserState public state;
+    uint24 public poolFee;
 
     // Events
     event Contribution(address indexed contributor, uint256 amount);
@@ -64,6 +66,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     event FundsClaimed(address indexed claimer, uint256 amount);
     event Failed();
     event SwapPairInitialized(uint256 tokenId, uint256 liquidity);
+    event LiquidityMintingFailed();
 
     /**
      * @dev Constructor to initialize the fundraiser contract
@@ -86,6 +89,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         require(params.campaign != ICampaign(address(0)), "Campaign address cannot be zero");
         require(params.vestingDuration == 0 || params.vesting != IVesting(address(0)),
         "Vesting address cannot be zero if vesting is enabled");
+        require(params.poolFee == 10000 || params.poolFee == 3000 || params.poolFee == 500, "Invalid pool fee");
 
         saleToken = IERC20(params.saleToken);
         raiseToken = IERC20(params.raiseToken);
@@ -97,6 +101,29 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         vestingStartDelta = params.vestingStartDelta;
         vesting = IVesting(params.vesting);
         state = FundraiserState.Active;
+        poolFee = params.poolFee;
+
+        // init the pool here to prevent malicious actors from creating the pool with wrong values
+
+        // compute initial sqrtPriceX96 and create the pool using dummy values
+        (uint256 saleTokensAmount, ) = getRequiredAmountsForLiquidity(10**18);
+
+        // this is not order agnostic
+        (address token0,
+        address token1,
+        uint256 token0Amount,
+        uint256 token1Amount) = _getTokenOrder(
+            address(saleToken),
+            address(raiseToken),
+            saleTokensAmount,
+            10**18);
+
+        // Compute sqrtPriceX96 and init the pool
+        positionManager.createAndInitializePoolIfNecessary(
+            token0,
+            token1,
+            poolFee,
+            uint160(Math.sqrt((token0Amount * (10 ** 18)) / token1Amount) * (2 ** 96)));
     }
 
     /**
@@ -140,6 +167,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
 
     /**
      * @dev Set the fundraising as failed if the campaign type allows so
+     * or if liquidity minting failed
     */
     function setFailed() public onlyOwner nonReentrant() {
         require(state == FundraiserState.Active, "Fundraising not active");
@@ -221,11 +249,10 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
 
     /**
     * @dev Initialize the swap pair after the fundraising is finalized
-    * @param poolFee The fee to be charged by the pool
     * @param tickLower The lower tick of the pool
     * @param tickUpper The upper tick of the pool
     */
-    function initSwapPair(uint24 poolFee, int24 tickLower, int24 tickUpper) public onlyOwner nonReentrant() {
+    function initSwapPair(int24 tickLower, int24 tickUpper) public onlyOwner nonReentrant() {
         require(state == FundraiserState.Finalized, "Fundraising not finalized");
         state = FundraiserState.SwapPairCreated;
 
@@ -251,13 +278,6 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
             address(raiseToken),
             requiredSaleTokens,
             requiredRaiseTokens);
-
-        // Compute sqrtPriceX96 and init the pool
-        positionManager.createAndInitializePoolIfNecessary(
-            token0,
-            token1,
-            poolFee,
-            uint160(Math.sqrt((token0Amount * (10 ** 18)) / token1Amount) * (2 ** 96)));
 
         // Approve the position manager to manage tokens
         IERC20(token0).safeIncreaseAllowance(address(positionManager), token0Amount);
