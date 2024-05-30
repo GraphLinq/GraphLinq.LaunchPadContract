@@ -324,7 +324,7 @@ contract FundraiserFactoryTest is Test {
         fundraiser.contribute(500 * 10**18);
 
         // Fast forward time to after the campaign end time
-        vm.warp(block.timestamp + 3600);
+        vm.warp(block.timestamp + 3601);
 
         // Finalize the fundraiser
         fundraiser.setFailed();
@@ -337,5 +337,151 @@ contract FundraiserFactoryTest is Test {
         fundraiser.claimFunds();
         uint256 finalBalance = raiseToken.balanceOf(address(this));
         assertEq(finalBalance, initialBalance + 500 * 10**18, "Funds should be returned");
+    }
+
+    // Test multiple contributions
+    function testMultipleContributions() public {
+        bytes memory fundraiserParams = abi.encode(
+            "Multiple Contributions Test",
+            "Testing multiple contributions",
+            "https://example.com",
+            address(saleToken),
+            address(raiseToken),
+            3600,
+            86400
+        );
+
+        bytes memory campaignParams = abi.encode(
+            block.timestamp + 3600,  // End time 1 hour from now
+            1000 * 10**18,
+            1 * 10**18
+        );
+
+        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        Fundraiser fundraiser = Fundraiser(fundraiserAddress);
+
+        // Mint raise tokens to the contributor
+        raiseToken.mint(address(this), 1500 * 10**18);
+
+        // Approve the fundraiser to spend raise tokens
+        IERC20(address(raiseToken)).approve(fundraiserAddress, 1500 * 10**18);
+
+        // Contribute multiple times
+        fundraiser.contribute(500 * 10**18);
+        fundraiser.contribute(500 * 10**18);
+        fundraiser.contribute(500 * 10**18);
+
+        // Assertions
+        assertEq(fundraiser.raisedAmount(), 1500 * 10**18, "Raised amount mismatch");
+        assertEq(fundraiser.contributions(address(this)), 1500 * 10**18, "Contribution amount mismatch");
+    }
+
+    // Test claiming tokens with vesting
+    function testClaimTokensWithVesting() public {
+        bytes memory fundraiserParams = abi.encode(
+            "Claim Tokens with Vesting Test",
+            "Testing claiming tokens with vesting",
+            "https://example.com",
+            address(saleToken),
+            address(raiseToken),
+            3600,
+            86400
+        );
+
+        bytes memory campaignParams = abi.encode(
+            block.timestamp + 3600,
+            1000 * 10**18,
+            1 * 10**18
+        );
+
+        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        Fundraiser fundraiser = Fundraiser(fundraiserAddress);
+
+        // Mint sale tokens to the fundraiser
+        saleToken.mint(fundraiserAddress, 10000 * 10**18);
+
+        // Mint raise tokens to the contributor
+        raiseToken.mint(address(this), 1000 * 10**18);
+
+        // Approve the fundraiser to spend raise tokens
+        IERC20(address(raiseToken)).approve(fundraiserAddress, 1000 * 10**18);
+
+        // Contribute to the fundraiser
+        fundraiser.contribute(1000 * 10**18);
+
+        // Fast forward time to after the campaign end time
+        vm.warp(block.timestamp + 3600);
+
+        // Finalize the fundraiser
+        fundraiser.finalize();
+
+        // Initialize the swap pair
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
+        saleToken.mint(fundraiserAddress, requiredSaleTokens);
+        raiseToken.mint(fundraiserAddress, 100 * 10**18);
+
+        fundraiser.initSwapPair(3000, -887220, 887220);
+
+        // Fast forward time to after the vesting start
+        vm.warp(block.timestamp + 3600);
+
+        // Claim tokens
+        fundraiser.claimTokens();
+
+        // Assertions
+        assertTrue(fundraiser.claimed(address(this)), "Tokens should be claimed");
+    }
+
+    // Test claiming tokens without vesting
+    function testClaimTokensWithoutVesting() public {
+        bytes memory fundraiserParams = abi.encode(
+            "Claim Tokens without Vesting Test",
+            "Testing claiming tokens without vesting",
+            "https://example.com",
+            address(saleToken),
+            address(raiseToken),
+            0,  // No vesting
+            0   // No vesting duration
+        );
+
+        bytes memory campaignParams = abi.encode(
+            block.timestamp + 3600,
+            1000 * 10**18,
+            1 * 10**18
+        );
+
+        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        Fundraiser fundraiser = Fundraiser(fundraiserAddress);
+
+        // Mint sale tokens to the fundraiser
+        saleToken.mint(fundraiserAddress, 10000 * 10**18);
+
+        // Mint raise tokens to the contributor
+        raiseToken.mint(address(this), 1000 * 10**18);
+
+        // Approve the fundraiser to spend raise tokens
+        IERC20(address(raiseToken)).approve(fundraiserAddress, 1000 * 10**18);
+
+        // Contribute to the fundraiser
+        fundraiser.contribute(1000 * 10**18);
+
+        // Fast forward time to after the campaign end time
+        vm.warp(block.timestamp + 3600);
+
+        // Finalize the fundraiser
+        fundraiser.finalize();
+
+        // Initialize the swap pair
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
+        saleToken.mint(fundraiserAddress, requiredSaleTokens);
+        raiseToken.mint(fundraiserAddress, 100 * 10**18);
+
+        fundraiser.initSwapPair(3000, -887220, 887220);
+
+        // Claim tokens
+        fundraiser.claimTokens();
+
+        // Assertions
+        assertTrue(fundraiser.claimed(address(this)), "Tokens should be claimed");
     }
 }
