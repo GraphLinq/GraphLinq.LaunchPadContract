@@ -22,7 +22,7 @@ forge build
 
 ## Run Tests
 
-forge test --fork-url https://mainnet.infura.io/v3/1259beac706140b38d611bca1f47e461 --fork-block-number 19946000
+forge test --fork-url https://mainnet.infura.io/v3/[API_KEY] --fork-block-number 19946000
 
 ## Static Analysis Report
 
