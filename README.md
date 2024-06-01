@@ -24,6 +24,10 @@ forge build
 
 forge test --fork-url https://mainnet.infura.io/v3/[API_KEY] --fork-block-number 19946000
 
+## Deploy
+
+forge script script/Deploy.s.sol --rpc-url YOUR_RPC_URL --broadcast
+
 ## Static Analysis Report
 
 This document details the results of the static analysis performed on the Solidity smart contracts in this project using Solhint and Slither. The issues identified have been reviewed and acknowledged.

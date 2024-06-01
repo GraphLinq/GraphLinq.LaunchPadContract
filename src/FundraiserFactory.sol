@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "./Fundraiser.sol";
 import "./Vesting.sol";
@@ -9,7 +10,7 @@ import "./Vesting.sol";
 import "./interfaces/ICampaignFactory.sol";
 import "./interfaces/ICampaign.sol";
 
-contract FundraiserFactory is Initializable, OwnableUpgradeable {
+contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradable {
     // Events
     event FundraiserCreated(address indexed fundraiser);
     event CampaignRegistered(uint8 id);
@@ -43,7 +44,14 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable {
     */
     function initialize() public initializer {
         __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
     }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        onlyOwner
+        override
+    {}
 
     /**
      * @dev Register a new campaign
