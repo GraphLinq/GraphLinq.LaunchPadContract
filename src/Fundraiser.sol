@@ -106,7 +106,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         // init the pool here to prevent malicious actors from creating the pool with wrong values
 
         // compute initial sqrtPriceX96 and create the pool using dummy values
-        (uint256 saleTokensAmount, ) = getRequiredAmountsForLiquidity(10**18);
+        (uint256 saleTokensAmount, ) = getRequiredAmountsForLiquidity(1000 * 10**18);
 
         // this is not order agnostic
         (address token0,
@@ -116,14 +116,14 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
             address(saleToken),
             address(raiseToken),
             saleTokensAmount,
-            10**18);
+            1000 * 10**18);
 
         // Compute sqrtPriceX96 and init the pool
         positionManager.createAndInitializePoolIfNecessary(
             token0,
             token1,
             poolFee,
-            uint160(Math.sqrt((token0Amount * (10 ** 18)) / token1Amount) * (2 ** 96)));
+            uint160(_computeSqrtPriceX96(token0Amount, token1Amount)));
     }
 
     /**
@@ -306,5 +306,17 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
             IERC20(token1).safeTransfer(msg.sender, token1Amount - amount1);
 
         emit SwapPairInitialized(tokenId, liquidity);
+    }
+
+    /**
+     * @dev Internal function to compute the sqrtPriceX96
+     * @param token0Amount Amount of token0
+     * @param token1Amount Amount of token1
+     * @return sqrtPriceX96 The computed sqrtPriceX96
+    */
+    function _computeSqrtPriceX96(uint256 token0Amount, uint256 token1Amount) internal pure returns (uint160) {
+        uint256 ratioX96 = (token1Amount << 96) / token0Amount;
+        uint160 sqrtPriceX96 = uint160(Math.sqrt(ratioX96) << 48); // Shift by 48 to get the sqrtPriceX96 format
+        return sqrtPriceX96;
     }
 }

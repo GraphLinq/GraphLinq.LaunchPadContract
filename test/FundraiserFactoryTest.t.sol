@@ -17,6 +17,8 @@ import "openzeppelin-contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 import "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "uniswap-v3-periphery/interfaces/IQuoter.sol";
+
 contract FundraiserFactoryTest is Test {
     FundraiserFactory private factory;
     StealthLaunchFactory private stealthFactory;
@@ -26,6 +28,7 @@ contract FundraiserFactoryTest is Test {
     MockERC20 private raiseToken;
     uint8 private stealthLaunchID;
     uint8 private fairLaunchID;
+    IQuoter private quoter;
 
     function setUp() public {
         owner = address(this);
@@ -48,6 +51,9 @@ contract FundraiserFactoryTest is Test {
         // Deploy mock tokens
         saleToken = new MockERC20("Sale Token", "SALE");
         raiseToken = new MockERC20("Raise Token", "RAISE");
+
+        // Initialize Uniswap V3 router and quoter
+        quoter = IQuoter(address(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6)); // Replace with the actual address on final chain
     }
 
     function testCreateStealthLaunchFundraiser() public {
@@ -492,5 +498,90 @@ contract FundraiserFactoryTest is Test {
 
         // Assertions
         assertTrue(fundraiser.claimed(address(this)), "Tokens should be claimed");
+    }
+
+    function testInitSwapPairAndCheckPrice() public {
+
+        uint256 snapshotId = vm.snapshot();
+        // Create two fundraisers with tokens in different orders
+        // Fundraiser 1: saleToken < raiseToken
+        _testInitSwapPairAndCheckPrice(
+            saleToken, 
+            raiseToken, 
+            1 * 10**18 // pricePerToken
+        );
+
+        vm.revertTo(snapshotId);
+
+        // Fundraiser 2: saleToken > raiseToken
+        _testInitSwapPairAndCheckPrice(
+            raiseToken, 
+            saleToken, 
+            100 * 10**18 // pricePerToken
+        );
+    }
+
+    function _testInitSwapPairAndCheckPrice(
+        MockERC20 sale, 
+        MockERC20 raise, 
+        uint256 pricePerToken
+    ) internal {
+        // Prepare parameters for the fundraiser
+        bytes memory fundraiserParams = abi.encode(
+            "Test Project",
+            "This is a test project.",
+            "https://testproject.com",
+            address(sale), //sale
+            address(raise), //rase
+            3600,  // Vesting starts 1 hour after finalization
+            86400,  // Vesting duration of 24 hours
+            3000    // Pool fee
+        );
+
+        bytes memory campaignParams = abi.encode(
+            block.timestamp,  // End time is now
+            0,  // Minimum goal of 0 tokens
+            pricePerToken  // pricePerToken
+        );
+
+        // Create the fundraiser
+        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        Fundraiser fundraiser = Fundraiser(fundraiserAddress);
+
+        // Finalize the fundraiser
+        fundraiser.finalize();
+
+        // Mint tokens to the fundraiser
+        sale.mint(fundraiserAddress, 10000 * 10**18);
+        raise.mint(fundraiserAddress, 1000 * 10**18);
+
+        // Initialize the swap pair
+        fundraiser.initSwapPair(-887220, 887220);
+
+        // Swap tokens to check the price
+        uint256 amountIn = 1 * 10**18; // Amount to swap
+        uint256 expectedAmountOut = quoter.quoteExactInputSingle(
+                address(raise),
+                address(sale),
+                3000,
+                amountIn,
+                0
+            );
+
+        // Calculate the theoretical amount out using pricePerToken and accounting for the fee
+        uint256 feePercentage = 3000; // Pool fee (3000 for 0.3%)
+        uint256 feeDeductedAmountIn = (amountIn * (1000000 - feePercentage)) / 1000000;
+        uint256 theoreticalAmountOut = (feeDeductedAmountIn * 10**18) / pricePerToken;
+
+        // Assert that the expected amount out from the quoter matches the theoretical amount out
+        assertApproxEqual(expectedAmountOut, theoreticalAmountOut, 0.01 * 10**18, "Quoter output does not match theoretical price");
+    }
+
+    function assertApproxEqual(uint256 a, uint256 b, uint256 tolerance, string memory errorMessage) internal {
+        if (a > b) {
+            require(a - b <= tolerance, errorMessage);
+        } else {
+            require(b - a <= tolerance, errorMessage);
+        }
     }
 }
