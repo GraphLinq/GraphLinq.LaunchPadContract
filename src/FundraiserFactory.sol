@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "./Fundraiser.sol";
 import "./Vesting.sol";
@@ -10,7 +10,7 @@ import "./Vesting.sol";
 import "./interfaces/ICampaignFactory.sol";
 import "./interfaces/ICampaign.sol";
 
-contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradable {
+contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // Events
     event FundraiserCreated(address indexed fundraiser);
     event CampaignRegistered(uint8 id);

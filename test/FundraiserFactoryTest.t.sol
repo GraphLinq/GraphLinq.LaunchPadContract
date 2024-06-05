@@ -12,10 +12,10 @@ import "../src/FairLaunchCampaign.sol";
 import "../src/interfaces/ICampaign.sol";
 import "../src/interfaces/ICampaignFactory.sol";
 import "../src/test/MockERC20.sol";
-import "openzeppelin-contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-contracts/access/Ownable.sol";
-import "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "uniswap-v3-periphery/interfaces/IQuoter.sol";
 

@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 import "./interfaces/ICampaign.sol";
-import "openzeppelin-contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract StealthLaunchCampaign is ICampaign, Ownable {
     // Public state variables
