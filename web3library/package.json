@@ -1,0 +1,23 @@
+{
+  "name": "fundraiserlib",
+  "type": "commonjs",
+  "files": [
+    "web3library/dist"
+  ],
+  "main": "./dist/fundraiserlib.umd.js",
+  "typings": "./dist/web3library/index.d.ts",
+  "module": "./dist/fundraiserlib.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/fundraiserlib.es.js",
+      "require": "./dist/fundraiserlib.umd.js"
+    }
+  },
+  "dependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "chai": "^5.1.1",
+    "ethereum-waffle": "^4.0.10",
+    "ethers": "^6.13.0",
+    "mocha": "^10.4.0"
+  }
+}
