@@ -15,3 +15,8 @@ node_modules
 
 # foundry temp files
 out/
+
+web3library/dist/
+web3library/node_modules/
+
+broadcast/

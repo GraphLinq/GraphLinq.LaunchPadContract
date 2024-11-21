@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx hardhat compile"
+    "build": "forge build",
+    "typechain": "typechain --target ethers-v6 --out-dir typechain-types $(find ./out -name '*.json' ! -name 'strings.json' ! -name 'Errors.json' ! -name 'IQuoter.json' ! -name 'Math.json' ! -name 'safeconsole.json' ! -path './out/build-info/*') --show-stack-traces"
   },
   "repository": {
     "type": "git",
@@ -19,6 +21,8 @@
   },
   "homepage": "https://github.com/unforkableco/graphlinq_contracts#readme",
   "devDependencies": {
+    "@typechain/ethers-v6": "^0.5.1",
+    "typechain": "^8.3.2"
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^5.0.2",

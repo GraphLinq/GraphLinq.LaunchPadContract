@@ -1,0 +1,17 @@
+{
+    "abi": [
+      {
+        "type": "function",
+        "name": "createCampaign",
+        "inputs": [
+          { "name": "owner", "type": "address", "internalType": "address" },
+          { "name": "data", "type": "bytes", "internalType": "bytes" }
+        ],
+        "outputs": [
+          { "name": "", "type": "address", "internalType": "contract ICampaign" }
+        ],
+        "stateMutability": "nonpayable"
+      }
+    ]
+}
+  
