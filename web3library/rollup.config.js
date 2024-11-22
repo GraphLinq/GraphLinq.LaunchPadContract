@@ -2,7 +2,7 @@ import typescript from '@rollup/plugin-typescript';
 import { defineConfig } from 'rollup';
 
 export default defineConfig({
-    input: 'index.ts',
+    input: 'src/index.ts',
     output: [
         {
             file: 'dist/fundraiserlib.umd.js',
@@ -19,8 +19,7 @@ export default defineConfig({
     plugins: [
         typescript({
             tsconfig: './tsconfig.json',
-            declaration: true,
-            declarationDir: 'dist/types'
+            declaration: true
         })
     ]
 });

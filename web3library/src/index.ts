@@ -2,6 +2,8 @@ import { ContractTransactionResponse, JsonRpcProvider, Provider, TransactionResp
 import { BigNumberish, Contract, ContractTransaction, ethers, Signer } from "ethers";
 import { Fundraiser, Fundraiser__factory, FundraiserFactory, FundraiserFactory__factory, IVesting, IVesting__factory, ERC20, ICampaign, ICampaign__factory, INonfungiblePositionManager } from "./typechain-types";
 
+export { FundraiserFactory__factory, Fundraiser__factory, MockERC20__factory } from './typechain-types';
+
 export class FundraiserWeb3Connect {
 
     provider: Provider;

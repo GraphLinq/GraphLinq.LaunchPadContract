@@ -16,8 +16,8 @@
   "scripts": {
     "clean": "rimraf dist",
     "build-config": "tsc rollup.config.ts --outDir ./dist",
-    "build": "tsc && yarn build-config && rollup --config ./dist/rollup.config.js",
-    "test": "ts-mocha test/tests.spec.ts",
+    "build": "rimraf dist && tsc && rollup -c --bundleConfigAsCjs",
+    "test": "ts-mocha",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.1",
+    "@swc-node/register": "^1.10.9",
     "@typechain/ethers-v6": "^0.5.1",
     "@types/node": "^22.9.1",
     "rimraf": "^5.0.0",
