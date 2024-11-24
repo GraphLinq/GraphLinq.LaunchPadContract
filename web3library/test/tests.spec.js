@@ -174,7 +174,7 @@ describe('FundraiserWeb3Connect', function () {
 
       const newFundraiser = Fundraiser__factory.connect(events[events.length-1].args[0], owner);
 
-      const failTx = await library.setFailed(owner, await newFundraiser.getAddress());
+      const failTx = await library.cancelFundraiser(owner, await newFundraiser.getAddress());
       await failTx.wait();
 
       const state = await newFundraiser.state();
