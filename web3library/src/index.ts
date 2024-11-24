@@ -31,20 +31,34 @@ export class FundraiserWeb3Connect {
         this.pending = [];
     }
 
+    /**
+     * Connects the library to a JSON-RPC provider.
+     * @param url - The RPC URL of the Ethereum node.
+     */
     public connect(url: string) {
         this.provider = new JsonRpcProvider(url);
         this.fundraiserFactory = this.fundraiserFactory.connect(this.provider);
     }
 
+    /**
+     * Connects the library to a pre-configured provider.
+     * @param provider - An existing ethers.js provider instance.
+     */
     public connectWithProvider(provider: Provider) {
         this.provider = provider;
         this.fundraiserFactory = this.fundraiserFactory.connect(this.provider);
     }
 
+    /**
+     * Disconnects the library from the current provider.
+     */
     public disconnect() {
         this.provider.removeAllListeners();
     }
 
+    /**
+     * Internal utility to safely execute asynchronous calls and handle errors.
+     */
     private async safeExecute<T>(
         action: () => Promise<T>
     ): Promise<T> {
@@ -66,6 +80,12 @@ export class FundraiserWeb3Connect {
         }
     }
 
+    /**
+     * Creates a new stealth launch fundraiser.
+     * @param signer - The signer instance for transaction signing.
+     * @param params - Parameters for the fundraiser creation.
+     * @param campaignParams - Campaign-specific parameters.
+     */
     public async createFundraiserStealthLaunch(
         signer: Signer,
         params: {
@@ -105,6 +125,12 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Creates a new fair launch fundraiser.
+     * @param signer - The signer instance for transaction signing.
+     * @param params - Parameters for the fundraiser creation.
+     * @param campaignParams - Campaign-specific parameters.
+     */
     public async createFundraiserFairLaunch(
         signer: Signer,
         params: {
@@ -145,6 +171,13 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Approves an ERC20 token for spending by a specific address.
+     * @param signer - The signer instance for transaction signing.
+     * @param tokenAddr - Address of the ERC20 token.
+     * @param spenderAddr - Address allowed to spend the token.
+     * @param amount - Amount of tokens to approve.
+     */
     public async approveERC20(
         signer: Signer,
         tokenAddr: string,
@@ -170,7 +203,13 @@ export class FundraiserWeb3Connect {
         });
     }
 
-    //similar function to approveERC20 to check the allowance
+    /**
+     * Checks the allowance of a spender for a specific ERC20 token.
+     * @param signer - The signer instance for transaction signing.
+     * @param tokenAddr - Address of the ERC20 token.
+     * @param spenderAddr - Address of the spender.
+     * @returns The current allowance as a BigNumber.
+     */
     public async checkAllowance(
         signer: Signer,
         tokenAddr: string,
@@ -193,7 +232,12 @@ export class FundraiserWeb3Connect {
         });
     }
     
-
+    /**
+     * Contributes to a fundraiser by transferring the specified amount.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     * @param amount - Amount to contribute.
+     */
     public async contribute(signer: Signer, fundraiserAddr: string, amount: BigNumberish) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
@@ -202,6 +246,25 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Fetches the amount already contributed to a fundraiser by a specific address.
+     * @param signer - The signer of the contributor
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     */
+    public async getContribution(signer: Signer, fundraiserAddr: string) {
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
+            const userAddr = await signer.getAddress();
+            const contribution = await fundraiser.contributions(userAddr);
+            return contribution;
+        });
+    }
+
+    /**
+     * Claims tokens from a finalized fundraiser.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     */
     public async claimTokens(signer: Signer, fundraiserAddr: string) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
@@ -210,6 +273,11 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Claims funds from a failed fundraiser.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     */
     public async claimFunds(signer: Signer, fundraiserAddr: string) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
@@ -218,6 +286,12 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Retrieves vesting information for a user in a specific fundraiser.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     * @returns An object containing releasable amount and vesting schedules.
+     */
     public async getVestingInfo(signer: Signer, fundraiserAddr: string) {
         return this.safeExecute(async () => {
             const userAddr = await signer.getAddress();
@@ -234,6 +308,11 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Claims vested tokens for a user.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     */
     public async claimVested(signer: Signer, fundraiserAddr: string) {
         return this.safeExecute(async () => {
             const userAddr = await signer.getAddress();
@@ -245,6 +324,11 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Finalizes a fundraiser, locking it and enabling token claims.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     */
     public async finalizeFundraiser(signer: Signer, fundraiserAddr: string) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
@@ -253,6 +337,11 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Cancels a fundraiser, marking it as failed.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     */
     public async cancelFundraiser(signer: Signer, fundraiserAddr: string) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
@@ -261,6 +350,12 @@ export class FundraiserWeb3Connect {
         });
     }
 
+    /**
+     * Retrieves liquidity information for initializing the swap pair.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     * @param initialRaiseTokenLiquidity - Initial amount of raise tokens to be provided.
+     * @returns The required sale token liquidity.
+     */
     public async getSaleTokenLiquidityInfo(fundraiserAddr: string, initialRaiseTokenLiquidity: BigNumberish) {
         const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
 
@@ -268,6 +363,13 @@ export class FundraiserWeb3Connect {
         return liquidityInfo.requiredSaleTokens;
     }
 
+    /**
+     * Initializes a swap pair for a finalized fundraiser.
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     * @param tickLower - Lower tick range for the pool.
+     * @param tickUpper - Upper tick range for the pool.
+     */
     public async initSwapPair(signer: Signer, fundraiserAddr: string, tickLower: number, tickUpper: number) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
@@ -276,14 +378,11 @@ export class FundraiserWeb3Connect {
         });
     }
 
-    public async setFailed(signer: Signer, fundraiserAddr: string) {
-        return this.safeExecute(async () => {
-            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-            const tx = await fundraiser.setFailed();
-            return await this.addTx(tx);
-        });
-    }
-
+    /**
+     * Fetches detailed information about a fundraiser's state.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     * @returns An object containing fundraiser details such as state, tokens, and balances.
+     */
     public async getFundraiserState(fundraiserAddr: string) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
