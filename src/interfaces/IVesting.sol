@@ -28,4 +28,15 @@ interface IVesting {
      * @return The number of tokens releasable.
      */
     function releasableAmount(address beneficiary) external view returns (uint256);
+
+    /**
+     * @dev Returns the vesting schedule info of a beneficiary
+     * @param beneficiary Address of the beneficiary
+     */
+    function vestingSchedules(address beneficiary) external view returns (
+        uint256 vestingStart,
+        uint256 vestingDuration,
+        uint256 totalVestingAmount,
+        uint256 releasedAmount
+    );
 }

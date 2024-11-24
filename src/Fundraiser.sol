@@ -43,6 +43,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     uint256 public raisedAmount; // Total raised amount in raised tokens
     uint256 public soldAmount; // Total amount of tokens sold
     uint256 public finalizedTimestamp;
+    uint256 public createdTimestamp;
     
     IERC20 public saleToken;
     IERC20 public raiseToken;
@@ -103,6 +104,8 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         state = FundraiserState.Active;
         poolFee = params.poolFee;
 
+        createdTimestamp = block.timestamp;
+
         // init the pool here to prevent malicious actors from creating the pool with wrong values
 
         // compute initial sqrtPriceX96 and create the pool using dummy values
@@ -137,7 +140,8 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         purchasedTokens[msg.sender] += tokens;
         raisedAmount += amount;
         soldAmount += tokens;
-        
+        uint256 allowance = raiseToken.allowance(msg.sender, address(this));
+        require(allowance >= amount, "Insufficient allowance");
         raiseToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Contribution(msg.sender, amount);
     }

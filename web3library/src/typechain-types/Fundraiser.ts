@@ -74,6 +74,7 @@ export interface FundraiserInterface extends Interface {
       | "claimed"
       | "contribute"
       | "contributions"
+      | "createdTimestamp"
       | "finalize"
       | "finalizedTimestamp"
       | "getRequiredAmountsForLiquidity"
@@ -130,6 +131,10 @@ export interface FundraiserInterface extends Interface {
   encodeFunctionData(
     functionFragment: "contributions",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "createdTimestamp",
+    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "finalize", values?: undefined): string;
   encodeFunctionData(
@@ -202,6 +207,10 @@ export interface FundraiserInterface extends Interface {
   decodeFunctionResult(functionFragment: "contribute", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "contributions",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "createdTimestamp",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "finalize", data: BytesLike): Result;
@@ -419,6 +428,8 @@ export interface Fundraiser extends BaseContract {
 
   contributions: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
+  createdTimestamp: TypedContractMethod<[], [bigint], "view">;
+
   finalize: TypedContractMethod<[], [void], "nonpayable">;
 
   finalizedTimestamp: TypedContractMethod<[], [bigint], "view">;
@@ -509,6 +520,9 @@ export interface Fundraiser extends BaseContract {
   getFunction(
     nameOrSignature: "contributions"
   ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "createdTimestamp"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "finalize"
   ): TypedContractMethod<[], [void], "nonpayable">;

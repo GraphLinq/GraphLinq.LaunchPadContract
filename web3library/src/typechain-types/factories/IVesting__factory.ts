@@ -66,6 +66,40 @@ const _abi = [
     outputs: [],
     stateMutability: "nonpayable",
   },
+  {
+    type: "function",
+    name: "vestingSchedules",
+    inputs: [
+      {
+        name: "beneficiary",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "vestingStart",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "vestingDuration",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "totalVestingAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "releasedAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
 ] as const;
 
 export class IVesting__factory {

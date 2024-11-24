@@ -1,17 +1,30 @@
-import { ContractTransactionResponse, JsonRpcProvider, Provider, TransactionResponse } from "ethers";
-import { BigNumberish, Contract, ContractTransaction, ethers, Signer } from "ethers";
-import { Fundraiser, Fundraiser__factory, FundraiserFactory, FundraiserFactory__factory, IVesting, IVesting__factory, ERC20, ICampaign, ICampaign__factory, INonfungiblePositionManager } from "./typechain-types";
+import { BigNumberish, ContractTransactionResponse, JsonRpcProvider, Provider, TransactionResponse } from "ethers";
+import { ethers, Signer } from "ethers";
+import {
+    Fundraiser,
+    Fundraiser__factory,
+    FundraiserFactory,
+    FundraiserFactory__factory,
+    IVesting,
+    IVesting__factory,
+    ERC20,
+    ERC20__factory,
+    ICampaign,
+    ICampaign__factory,
+    INonfungiblePositionManager,
+} from "./typechain-types";
 
-export { FundraiserFactory__factory, Fundraiser__factory, MockERC20__factory } from './typechain-types';
+import { FundraiserError, UnknownError, mapRevertReasonToError } from './errors';
+
+export { FundraiserFactory__factory, Fundraiser__factory, MockERC20__factory } from "./typechain-types";
 
 export class FundraiserWeb3Connect {
-
     provider: Provider;
     fundraiserFactory: FundraiserFactory;
     pending: TransactionResponse[];
 
     constructor(factoryAddr: string) {
-        if(!factoryAddr) {
+        if (!factoryAddr) {
             throw new Error("Factory address is required");
         }
         this.fundraiserFactory = FundraiserFactory__factory.connect(factoryAddr);
@@ -32,95 +45,308 @@ export class FundraiserWeb3Connect {
         this.provider.removeAllListeners();
     }
 
-    public async createFundraiser(
-        signer: Signer,
-        params: {
-            projectName: string,
-            description: string,
-            websiteLink: string,
-            saleToken: string,
-            raiseToken: string,
-            vestingStartDelta: number,
-            vestingDuration: number,
-            poolFee: number
-        },
-        campaignParams: string,
-        campaignID: number
-    ) {
-        const tx = await this.fundraiserFactory.connect(signer).createFundraiser(
-            
-            ethers.AbiCoder.defaultAbiCoder().encode(
-                ["string", "string", "string", "address", "address", "uint256", "uint256", "uint24"],
-                [params.projectName, params.description, params.websiteLink, params.saleToken, params.raiseToken, params.vestingStartDelta, params.vestingDuration, params.poolFee]
-            ),
-            campaignParams,
-            campaignID
-        );
-        return await this.addTx(tx);
+    private async safeExecute<T>(
+        action: () => Promise<T>
+    ): Promise<T> {
+        try {
+            return await action();
+        } catch (error: any) {
+            if (error.reason) {
+                throw mapRevertReasonToError(error.reason);
+            } else if (error.data) {
+                try {
+                    const decodedReason = ethers.AbiCoder.defaultAbiCoder().decode(["string"], error.data)[0];
+                    throw mapRevertReasonToError(decodedReason);
+                } catch {
+                    throw new UnknownError(`Revert data could not be decoded. Raw data: ${error.data}`);
+                }
+            } else {
+                throw new UnknownError(error.message);
+            }
+        }
     }
 
+    public async createFundraiserStealthLaunch(
+        signer: Signer,
+        params: {
+            projectName: string;
+            description: string;
+            websiteLink: string;
+            saleToken: string;
+            raiseToken: string;
+            vestingStartDelta: number;
+            vestingDuration: number;
+            poolFee: number;
+        },
+        campaignParams: {
+            maxCap: BigNumberish;
+            pricePerToken: BigNumberish;
+        }
+    ) {
+        return this.safeExecute(async () => {
+            const tx = await this.fundraiserFactory.connect(signer).createFundraiser(
+                ethers.AbiCoder.defaultAbiCoder().encode(
+                    ["string", "string", "string", "address", "address", "uint256", "uint256", "uint24"],
+                    [
+                        params.projectName,
+                        params.description,
+                        params.websiteLink,
+                        params.saleToken,
+                        params.raiseToken,
+                        params.vestingStartDelta,
+                        params.vestingDuration,
+                        params.poolFee,
+                    ]
+                ),
+                ethers.AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [campaignParams.maxCap, campaignParams.pricePerToken]),
+                0
+            );
+            return await this.addTx(tx);
+        });
+    }
+
+    public async createFundraiserFairLaunch(
+        signer: Signer,
+        params: {
+            projectName: string;
+            description: string;
+            websiteLink: string;
+            saleToken: string;
+            raiseToken: string;
+            vestingStartDelta: number;
+            vestingDuration: number;
+            poolFee: number;
+        },
+        campaignParams: {
+            endTime: number;
+            minimumGoal: BigNumberish;
+            pricePerToken: BigNumberish;
+        }
+    ) {
+        return this.safeExecute(async () => {
+            const tx = await this.fundraiserFactory.connect(signer).createFundraiser(
+                ethers.AbiCoder.defaultAbiCoder().encode(
+                    ["string", "string", "string", "address", "address", "uint256", "uint256", "uint24"],
+                    [
+                        params.projectName,
+                        params.description,
+                        params.websiteLink,
+                        params.saleToken,
+                        params.raiseToken,
+                        params.vestingStartDelta,
+                        params.vestingDuration,
+                        params.poolFee,
+                    ]
+                ),
+                ethers.AbiCoder.defaultAbiCoder().encode(["uint256", "uint256", "uint256"], [campaignParams.endTime, campaignParams.minimumGoal, campaignParams.pricePerToken]),
+                1
+            );
+            return await this.addTx(tx);
+        });
+    }
+
+    public async approveERC20(
+        signer: Signer,
+        tokenAddr: string,
+        spenderAddr: string,
+        amount: BigNumberish
+    ) {
+        return this.safeExecute(async () => {
+            // Connect to the ERC20 contract using the signer
+            const tokenContract = new ethers.Contract(
+                tokenAddr,
+                [
+                    // Minimal ERC20 ABI for approve function
+                    "function approve(address spender, uint256 amount) public returns (bool)"
+                ],
+                signer
+            );
+    
+            // Call the `approve` function on the token contract
+            const tx = await tokenContract.approve(spenderAddr, amount);
+    
+            // Add transaction to pending
+            return await this.addTx(tx);
+        });
+    }
+
+    //similar function to approveERC20 to check the allowance
+    public async checkAllowance(
+        signer: Signer,
+        tokenAddr: string,
+        spenderAddr: string
+    ) {
+        return this.safeExecute(async () => {
+            // Connect to the ERC20 contract using the signer
+            const tokenContract = new ethers.Contract(
+                tokenAddr,
+                [
+                    // Minimal ERC20 ABI for approve function
+                    "function allowance(address owner, address spender) public view returns (uint256)"
+                ],
+                signer
+            );
+    
+            // Call the `allowance` function on the token contract
+            const allowance = await tokenContract.allowance(signer.getAddress(), spenderAddr);
+            return allowance;
+        });
+    }
+    
+
     public async contribute(signer: Signer, fundraiserAddr: string, amount: BigNumberish) {
-        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-        const tx = await fundraiser.contribute(amount);
-        return await this.addTx(tx);
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const tx = await fundraiser.contribute(amount);
+            return await this.addTx(tx);
+        });
     }
 
     public async claimTokens(signer: Signer, fundraiserAddr: string) {
-        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-        const tx = await fundraiser.claimTokens();
-        return await this.addTx(tx);
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const tx = await fundraiser.claimTokens();
+            return await this.addTx(tx);
+        });
     }
 
     public async claimFunds(signer: Signer, fundraiserAddr: string) {
-        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-        const tx = await fundraiser.claimFunds();
-        return await this.addTx(tx);
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const tx = await fundraiser.claimFunds();
+            return await this.addTx(tx);
+        });
     }
 
-    public async getFundraiserInfo(fundraiserAddr: string) {
-        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
-        const [projectName, description, websiteLink] = await fundraiser.info();
-        const raisedAmount = await fundraiser.raisedAmount();
-        const campaignAddr = await fundraiser.campaign();
-        const campaign = ICampaign__factory.connect(campaignAddr, this.provider);
-        const campaignType = await campaign.getCampaignDetails()[0];
+    public async getVestingInfo(signer: Signer, fundraiserAddr: string) {
+        return this.safeExecute(async () => {
+            const userAddr = await signer.getAddress();
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
+            const vestingAddr = await fundraiser.vesting();
+            const vesting = IVesting__factory.connect(vestingAddr, this.provider);
+            const releasableAmount = await vesting.releasableAmount(userAddr);
+            const vestingInfo = await vesting.vestingSchedules(userAddr);
 
-        return {
-            projectName,
-            description,
-            websiteLink,
-            raisedAmount,
-            campaignType
-        };
+            return {
+                releasableAmount,
+                vestingInfo
+            };
+        });
+    }
+
+    public async claimVested(signer: Signer, fundraiserAddr: string) {
+        return this.safeExecute(async () => {
+            const userAddr = await signer.getAddress();
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
+            const vestingAddr = await fundraiser.vesting();
+            const vesting = IVesting__factory.connect(vestingAddr, signer);
+            const tx = await vesting.releaseFor(userAddr);
+            return await this.addTx(tx);
+        });
     }
 
     public async finalizeFundraiser(signer: Signer, fundraiserAddr: string) {
-        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-        const tx = await fundraiser.finalize();
-        return await this.addTx(tx);
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const tx = await fundraiser.finalize();
+            return await this.addTx(tx);
+        });
     }
 
-    public async setFailed(signer: Signer, fundraiserAddr: string) {
-        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-        const tx = await fundraiser.setFailed();
-        return await this.addTx(tx);
+    public async cancelFundraiser(signer: Signer, fundraiserAddr: string) {
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const tx = await fundraiser.setFailed();
+            return await this.addTx(tx);
+        });
+    }
+
+    public async getSaleTokenLiquidityInfo(fundraiserAddr: string, initialRaiseTokenLiquidity: BigNumberish) {
+        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
+
+        let liquidityInfo = await fundraiser.getRequiredAmountsForLiquidity(initialRaiseTokenLiquidity);
+        return liquidityInfo.requiredSaleTokens;
     }
 
     public async initSwapPair(signer: Signer, fundraiserAddr: string, tickLower: number, tickUpper: number) {
-        const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-        const tx = await fundraiser.initSwapPair(tickLower, tickUpper);
-        return await this.addTx(tx);
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const tx = await fundraiser.initSwapPair(tickLower, tickUpper);
+            return await this.addTx(tx);
+        });
     }
 
-    public async claimVestedTokens(signer: Signer, vestingAddr: string) {
-        const vesting = IVesting__factory.connect(vestingAddr, signer);
-        const tx = await vesting.releaseFor(await signer.getAddress());
-        return await this.addTx(tx);
+    public async setFailed(signer: Signer, fundraiserAddr: string) {
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const tx = await fundraiser.setFailed();
+            return await this.addTx(tx);
+        });
     }
 
-    public async getClaimableVestedTokens(signer: Signer, vestingAddr: string, beneficiary: string) {
-        const vesting = IVesting__factory.connect(vestingAddr, signer);
-        return await vesting.releasableAmount(beneficiary);
+    public async getFundraiserState(fundraiserAddr: string) {
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, this.provider);
+            let vestingStartDelta = await fundraiser.vestingStartDelta();
+            let vestingDuration = await fundraiser.vestingDuration();
+            let raisedAmount = await fundraiser.raisedAmount();
+            let soldAmount = await fundraiser.soldAmount();
+            let finalizedTimestamp = await fundraiser.finalizedTimestamp();
+            let createdTimestamp = await fundraiser.createdTimestamp();
+            let saleToken = await fundraiser.saleToken();
+            let raiseToken = await fundraiser.raiseToken();
+            let state = await fundraiser.state();
+            let poolFee = await fundraiser.poolFee();
+            let projetInfo = await fundraiser.info();
+            let campaign = await fundraiser.campaign();
+            const campaignContract = ICampaign__factory.connect(campaign, this.provider);
+            const campaignDetails = await campaignContract.getCampaignDetails();
+            const pricePerToken = await campaignContract.pricePerToken();
+
+            // check how many sale tokens are left in fundraiser
+            const saleTokenContract = ERC20__factory.connect(saleToken, this.provider);
+            const saleTokenBalance = await saleTokenContract.balanceOf(fundraiserAddr);
+
+            const raiseTokenContract = ERC20__factory.connect(raiseToken, this.provider);
+            const raiseTokenBalance = await raiseTokenContract.balanceOf(fundraiserAddr);
+
+            // create a custom state string based on the state number
+            let stateString = "";
+            switch (state) {
+                case BigInt(0):
+                    stateString = "Active";
+                    break;
+                case BigInt(1):
+                    stateString = "Finalized";
+                    break;
+                case BigInt(2):
+                    stateString = "Failed";
+                    break;
+                case BigInt(3):
+                    stateString = "SwapPairCreated";
+                    break;
+                default:
+                    stateString = "Unknown";
+            }
+
+            return {
+                vestingStartDelta,
+                vestingDuration,
+                raisedAmount,
+                soldAmount,
+                createdTimestamp,
+                finalizedTimestamp,
+                saleToken,
+                raiseToken,
+                stateString,
+                poolFee,
+                projetInfo,
+                campaignDetails,
+                pricePerToken,
+                saleTokenBalance,
+                raiseTokenBalance
+            };
+        });
     }
 
     private async addTx(tx: ContractTransactionResponse) {
@@ -133,13 +359,12 @@ export class FundraiserWeb3Connect {
             this.pending.map(async (tx) => {
                 const confirmations = await tx.confirmations();
                 if (confirmations === 0) {
-                    // Fetch the updated transaction from the provider
                     const updatedTx = await this.provider.getTransaction(tx.hash);
                     if (updatedTx) {
                         return updatedTx;
                     }
                 }
-                return tx; // Keep the transaction as-is if it's already confirmed or not found
+                return tx;
             })
         );
     }
@@ -148,13 +373,9 @@ export class FundraiserWeb3Connect {
         const pendingTransactions = await Promise.all(
             this.pending.map(async (tx) => {
                 const confirmations = await tx.confirmations();
-
-                // If confirmations > 0, the transaction is mined
                 return confirmations > 0 ? null : tx;
             })
         );
-
-        // Filter out `null` values (mined transactions)
         this.pending = pendingTransactions.filter((tx): tx is TransactionResponse => tx !== null);
     }
 }

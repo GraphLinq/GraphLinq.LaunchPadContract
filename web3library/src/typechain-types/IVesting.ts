@@ -23,7 +23,11 @@ import type {
 
 export interface IVestingInterface extends Interface {
   getFunction(
-    nameOrSignature: "addVestingSchedule" | "releasableAmount" | "releaseFor"
+    nameOrSignature:
+      | "addVestingSchedule"
+      | "releasableAmount"
+      | "releaseFor"
+      | "vestingSchedules"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -38,6 +42,10 @@ export interface IVestingInterface extends Interface {
     functionFragment: "releaseFor",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "vestingSchedules",
+    values: [AddressLike]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "addVestingSchedule",
@@ -48,6 +56,10 @@ export interface IVestingInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "releaseFor", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "vestingSchedules",
+    data: BytesLike
+  ): Result;
 }
 
 export interface IVesting extends BaseContract {
@@ -116,6 +128,19 @@ export interface IVesting extends BaseContract {
     "nonpayable"
   >;
 
+  vestingSchedules: TypedContractMethod<
+    [beneficiary: AddressLike],
+    [
+      [bigint, bigint, bigint, bigint] & {
+        vestingStart: bigint;
+        vestingDuration: bigint;
+        totalVestingAmount: bigint;
+        releasedAmount: bigint;
+      }
+    ],
+    "view"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -138,6 +163,20 @@ export interface IVesting extends BaseContract {
   getFunction(
     nameOrSignature: "releaseFor"
   ): TypedContractMethod<[beneficiary: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "vestingSchedules"
+  ): TypedContractMethod<
+    [beneficiary: AddressLike],
+    [
+      [bigint, bigint, bigint, bigint] & {
+        vestingStart: bigint;
+        vestingDuration: bigint;
+        totalVestingAmount: bigint;
+        releasedAmount: bigint;
+      }
+    ],
+    "view"
+  >;
 
   filters: {};
 }
