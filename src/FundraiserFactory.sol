@@ -12,7 +12,7 @@ import "./interfaces/ICampaign.sol";
 
 contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // Events
-    event FundraiserCreated(address indexed fundraiser);
+    event FundraiserCreated(address indexed fundraiser, address indexed owner, uint256 id);
     event CampaignRegistered(uint8 id);
 
     // State variables
@@ -20,6 +20,9 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
     address constant public POSITION_MANAGER = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 
     mapping(uint8 => ICampaignFactory) public campaigns;
+
+    mapping(uint256 => address) public fundraisers;
+    uint256 public fundraiserID;
 
     /**
      * @dev Struct to hold parameters for the Fundraiser initialization
@@ -117,7 +120,42 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
         // Initialize the fundraiser
         fundraiser.initialize(params);
 
-        emit FundraiserCreated(address(fundraiser));
+        emit FundraiserCreated(address(fundraiser), msg.sender, fundraiserID);
+        fundraisers[fundraiserID++] = address(fundraiser);
         return address(fundraiser);
+    }
+
+    /**
+     * @dev Get the fundraisers by state
+     * @param startID The start ID of the fundraisers
+     * @param endID The end ID of the fundraisers, will use max ID if 0
+     * @return list of fundraisers of a specific state
+    */
+    function listFundraisers(
+        uint256 startID,
+        uint256 endID,
+        Fundraiser.FundraiserState state
+        ) public view returns (address[] memory list) {
+        if(endID == 0 || endID > fundraiserID) {
+            endID = fundraiserID;
+        }
+        // First, calculate the number of fundraisers matching the state to allocate memory
+        uint256 count = 0;
+        for (uint256 i = startID; i < endID; i++) {
+            if (Fundraiser(fundraisers[i]).state() == state) {
+                count++;
+            }
+        }
+
+        // Initialize the list with the exact size
+        list = new address[](count);
+
+        // Populate the list with matching fundraisers
+        uint256 index = 0;
+        for (uint256 i = startID; i < endID; i++) {
+            if (Fundraiser(fundraisers[i]).state() == state) {
+                list[index++] = fundraisers[i];
+            }
+        }
     }
 }

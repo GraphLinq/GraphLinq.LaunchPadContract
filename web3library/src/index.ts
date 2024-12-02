@@ -22,6 +22,7 @@ export class FundraiserWeb3Connect {
     provider: Provider;
     fundraiserFactory: FundraiserFactory;
     pending: TransactionResponse[];
+    connected: boolean;
 
     constructor(factoryAddr: string) {
         if (!factoryAddr) {
@@ -29,24 +30,35 @@ export class FundraiserWeb3Connect {
         }
         this.fundraiserFactory = FundraiserFactory__factory.connect(factoryAddr);
         this.pending = [];
+        this.connected = false;
+    }
+
+    public async performConnectionCheck() {
+        return this.safeExecute(async () => {
+            await this.fundraiserFactory.fundraiserID();
+        });
     }
 
     /**
      * Connects the library to a JSON-RPC provider.
      * @param url - The RPC URL of the Ethereum node.
      */
-    public connect(url: string) {
+    public async connect(url: string) {
         this.provider = new JsonRpcProvider(url);
         this.fundraiserFactory = this.fundraiserFactory.connect(this.provider);
+        await this.performConnectionCheck();
+        this.connected = true;
     }
 
     /**
      * Connects the library to a pre-configured provider.
      * @param provider - An existing ethers.js provider instance.
      */
-    public connectWithProvider(provider: Provider) {
+    public async connectWithProvider(provider: Provider) {
         this.provider = provider;
         this.fundraiserFactory = this.fundraiserFactory.connect(this.provider);
+        await this.performConnectionCheck();
+        this.connected = true;
     }
 
     /**
@@ -401,6 +413,7 @@ export class FundraiserWeb3Connect {
             const campaignContract = ICampaign__factory.connect(campaign, this.provider);
             const campaignDetails = await campaignContract.getCampaignDetails();
             const pricePerToken = await campaignContract.pricePerToken();
+            const config = await campaignContract.getConfig();
 
             // check how many sale tokens are left in fundraiser
             const saleTokenContract = ERC20__factory.connect(saleToken, this.provider);
@@ -443,8 +456,30 @@ export class FundraiserWeb3Connect {
                 campaignDetails,
                 pricePerToken,
                 saleTokenBalance,
-                raiseTokenBalance
+                raiseTokenBalance,
+                config
             };
+        });
+    }
+
+    /**
+     * Fetches all fundraisers created by the factory.
+     */
+    public async getFundraisersCount() {
+        return this.safeExecute(async () => {
+            return await this.fundraiserFactory.fundraiserID();
+        });
+    }
+
+    /**
+     * Fetches all fundraisers created by the factory.
+     * @param startID - The ID of the first fundraiser to fetch. Use 0 to start from the beginning.
+     * @param endID - The ID of the last fundraiser to fetch. Use 0 to fetch all fundraisers.
+     * @param type - The type of fundraisers to fetch. Use 0 for active fundraisers, 1 for finalized, 2 for failed, 3 for claimable. 
+     */
+    public async getAllFundraisers(startID: number, endID: number, type: number) {
+        return this.safeExecute(async () => {
+            return await this.fundraiserFactory.listFundraisers(startID, endID, type);
         });
     }
 

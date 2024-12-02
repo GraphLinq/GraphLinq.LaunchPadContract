@@ -33,6 +33,16 @@ contract StealthLaunchCampaign is ICampaign, Ownable {
         return PRICE_PER_TOKEN;
     }
 
+    function getRaisedAmount() external view override returns (uint256) {
+        return raisedAmount;
+    }
+
+    function getConfig() external view override returns (uint256[] memory params) {
+        params = new uint256[](2);
+        params[0] = MAX_CAP;
+        params[1] = PRICE_PER_TOKEN;
+    }
+
     /**
      * @dev Contribute to the campaign
      * @param contribution The amount of raise tokens to contribute

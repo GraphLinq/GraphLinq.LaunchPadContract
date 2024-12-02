@@ -44,7 +44,7 @@ describe('FundraiserWeb3Connect', function () {
 
     // Initialize the library and connect it to the provider
     library = new FundraiserWeb3Connect(factoryAddress);
-    library.connectWithProvider(provider);
+    await library.connectWithProvider(provider);
   });
 
   describe('Fundraiser Management', function () {

@@ -1,14 +1,17 @@
 import type { BaseContract, BigNumberish, BytesLike, FunctionFragment, Result, Interface, EventFragment, AddressLike, ContractRunner, ContractMethod, Listener } from "ethers";
 import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, TypedLogDescription, TypedListener, TypedContractMethod } from "./common";
 export interface FundraiserFactoryInterface extends Interface {
-    getFunction(nameOrSignature: "POSITION_MANAGER" | "UPGRADE_INTERFACE_VERSION" | "campaignID" | "campaigns" | "createFundraiser" | "initialize" | "owner" | "proxiableUUID" | "registerCampaign" | "renounceOwnership" | "transferOwnership" | "upgradeToAndCall"): FunctionFragment;
+    getFunction(nameOrSignature: "POSITION_MANAGER" | "UPGRADE_INTERFACE_VERSION" | "campaignID" | "campaigns" | "createFundraiser" | "fundraiserID" | "fundraisers" | "initialize" | "listFundraisers" | "owner" | "proxiableUUID" | "registerCampaign" | "renounceOwnership" | "transferOwnership" | "upgradeToAndCall"): FunctionFragment;
     getEvent(nameOrSignatureOrTopic: "CampaignRegistered" | "FundraiserCreated" | "Initialized" | "OwnershipTransferred" | "Upgraded"): EventFragment;
     encodeFunctionData(functionFragment: "POSITION_MANAGER", values?: undefined): string;
     encodeFunctionData(functionFragment: "UPGRADE_INTERFACE_VERSION", values?: undefined): string;
     encodeFunctionData(functionFragment: "campaignID", values?: undefined): string;
     encodeFunctionData(functionFragment: "campaigns", values: [BigNumberish]): string;
     encodeFunctionData(functionFragment: "createFundraiser", values: [BytesLike, BytesLike, BigNumberish]): string;
+    encodeFunctionData(functionFragment: "fundraiserID", values?: undefined): string;
+    encodeFunctionData(functionFragment: "fundraisers", values: [BigNumberish]): string;
     encodeFunctionData(functionFragment: "initialize", values?: undefined): string;
+    encodeFunctionData(functionFragment: "listFundraisers", values: [BigNumberish, BigNumberish, BigNumberish]): string;
     encodeFunctionData(functionFragment: "owner", values?: undefined): string;
     encodeFunctionData(functionFragment: "proxiableUUID", values?: undefined): string;
     encodeFunctionData(functionFragment: "registerCampaign", values: [AddressLike]): string;
@@ -20,7 +23,10 @@ export interface FundraiserFactoryInterface extends Interface {
     decodeFunctionResult(functionFragment: "campaignID", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "campaigns", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "createFundraiser", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "fundraiserID", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "fundraisers", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "listFundraisers", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "proxiableUUID", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "registerCampaign", data: BytesLike): Result;
@@ -40,10 +46,16 @@ export declare namespace CampaignRegisteredEvent {
     type LogDescription = TypedLogDescription<Event>;
 }
 export declare namespace FundraiserCreatedEvent {
-    type InputTuple = [fundraiser: AddressLike];
-    type OutputTuple = [fundraiser: string];
+    type InputTuple = [
+        fundraiser: AddressLike,
+        owner: AddressLike,
+        id: BigNumberish
+    ];
+    type OutputTuple = [fundraiser: string, owner: string, id: bigint];
     interface OutputObject {
         fundraiser: string;
+        owner: string;
+        id: bigint;
     }
     type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
     type Filter = TypedDeferredTopicFilter<Event>;
@@ -108,7 +120,16 @@ export interface FundraiserFactory extends BaseContract {
     ], [
         string
     ], "nonpayable">;
+    fundraiserID: TypedContractMethod<[], [bigint], "view">;
+    fundraisers: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
     initialize: TypedContractMethod<[], [void], "nonpayable">;
+    listFundraisers: TypedContractMethod<[
+        startID: BigNumberish,
+        endID: BigNumberish,
+        state: BigNumberish
+    ], [
+        string[]
+    ], "view">;
     owner: TypedContractMethod<[], [string], "view">;
     proxiableUUID: TypedContractMethod<[], [string], "view">;
     registerCampaign: TypedContractMethod<[
@@ -140,7 +161,16 @@ export interface FundraiserFactory extends BaseContract {
     ], [
         string
     ], "nonpayable">;
+    getFunction(nameOrSignature: "fundraiserID"): TypedContractMethod<[], [bigint], "view">;
+    getFunction(nameOrSignature: "fundraisers"): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
     getFunction(nameOrSignature: "initialize"): TypedContractMethod<[], [void], "nonpayable">;
+    getFunction(nameOrSignature: "listFundraisers"): TypedContractMethod<[
+        startID: BigNumberish,
+        endID: BigNumberish,
+        state: BigNumberish
+    ], [
+        string[]
+    ], "view">;
     getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "proxiableUUID"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "registerCampaign"): TypedContractMethod<[factory: AddressLike], [void], "nonpayable">;
@@ -160,7 +190,7 @@ export interface FundraiserFactory extends BaseContract {
     filters: {
         "CampaignRegistered(uint8)": TypedContractEvent<CampaignRegisteredEvent.InputTuple, CampaignRegisteredEvent.OutputTuple, CampaignRegisteredEvent.OutputObject>;
         CampaignRegistered: TypedContractEvent<CampaignRegisteredEvent.InputTuple, CampaignRegisteredEvent.OutputTuple, CampaignRegisteredEvent.OutputObject>;
-        "FundraiserCreated(address)": TypedContractEvent<FundraiserCreatedEvent.InputTuple, FundraiserCreatedEvent.OutputTuple, FundraiserCreatedEvent.OutputObject>;
+        "FundraiserCreated(address,address,uint256)": TypedContractEvent<FundraiserCreatedEvent.InputTuple, FundraiserCreatedEvent.OutputTuple, FundraiserCreatedEvent.OutputObject>;
         FundraiserCreated: TypedContractEvent<FundraiserCreatedEvent.InputTuple, FundraiserCreatedEvent.OutputTuple, FundraiserCreatedEvent.OutputObject>;
         "Initialized(uint64)": TypedContractEvent<InitializedEvent.InputTuple, InitializedEvent.OutputTuple, InitializedEvent.OutputObject>;
         Initialized: TypedContractEvent<InitializedEvent.InputTuple, InitializedEvent.OutputTuple, InitializedEvent.OutputObject>;

@@ -31,7 +31,10 @@ export interface FundraiserFactoryInterface extends Interface {
       | "campaignID"
       | "campaigns"
       | "createFundraiser"
+      | "fundraiserID"
+      | "fundraisers"
       | "initialize"
+      | "listFundraisers"
       | "owner"
       | "proxiableUUID"
       | "registerCampaign"
@@ -70,8 +73,20 @@ export interface FundraiserFactoryInterface extends Interface {
     values: [BytesLike, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "fundraiserID",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "fundraisers",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "initialize",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "listFundraisers",
+    values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
@@ -109,7 +124,19 @@ export interface FundraiserFactoryInterface extends Interface {
     functionFragment: "createFundraiser",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "fundraiserID",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "fundraisers",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "listFundraisers",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "proxiableUUID",
@@ -146,10 +173,16 @@ export namespace CampaignRegisteredEvent {
 }
 
 export namespace FundraiserCreatedEvent {
-  export type InputTuple = [fundraiser: AddressLike];
-  export type OutputTuple = [fundraiser: string];
+  export type InputTuple = [
+    fundraiser: AddressLike,
+    owner: AddressLike,
+    id: BigNumberish
+  ];
+  export type OutputTuple = [fundraiser: string, owner: string, id: bigint];
   export interface OutputObject {
     fundraiser: string;
+    owner: string;
+    id: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -255,7 +288,17 @@ export interface FundraiserFactory extends BaseContract {
     "nonpayable"
   >;
 
+  fundraiserID: TypedContractMethod<[], [bigint], "view">;
+
+  fundraisers: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+
   initialize: TypedContractMethod<[], [void], "nonpayable">;
+
+  listFundraisers: TypedContractMethod<
+    [startID: BigNumberish, endID: BigNumberish, state: BigNumberish],
+    [string[]],
+    "view"
+  >;
 
   owner: TypedContractMethod<[], [string], "view">;
 
@@ -309,8 +352,21 @@ export interface FundraiserFactory extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "fundraiserID"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "fundraisers"
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+  getFunction(
     nameOrSignature: "initialize"
   ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "listFundraisers"
+  ): TypedContractMethod<
+    [startID: BigNumberish, endID: BigNumberish, state: BigNumberish],
+    [string[]],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
@@ -382,7 +438,7 @@ export interface FundraiserFactory extends BaseContract {
       CampaignRegisteredEvent.OutputObject
     >;
 
-    "FundraiserCreated(address)": TypedContractEvent<
+    "FundraiserCreated(address,address,uint256)": TypedContractEvent<
       FundraiserCreatedEvent.InputTuple,
       FundraiserCreatedEvent.OutputTuple,
       FundraiserCreatedEvent.OutputObject

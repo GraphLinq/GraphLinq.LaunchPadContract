@@ -6,9 +6,11 @@ export declare class FundraiserWeb3Connect {
     provider: Provider;
     fundraiserFactory: FundraiserFactory;
     pending: TransactionResponse[];
+    connected: boolean;
     constructor(factoryAddr: string);
-    connect(url: string): void;
-    connectWithProvider(provider: Provider): void;
+    performConnectionCheck(): Promise<void>;
+    connect(url: string): Promise<void>;
+    connectWithProvider(provider: Provider): Promise<void>;
     disconnect(): void;
     private safeExecute;
     createFundraiserStealthLaunch(signer: Signer, params: {
@@ -78,7 +80,10 @@ export declare class FundraiserWeb3Connect {
         pricePerToken: bigint;
         saleTokenBalance: bigint;
         raiseTokenBalance: bigint;
+        config: bigint[];
     }>;
+    getFundraisersCount(): Promise<bigint>;
+    getAllFundraisers(startID: number, endID: number, type: number): Promise<string[]>;
     private addTx;
     updatePendingTransactions(): Promise<void>;
     purgeMinedTransactions(): Promise<void>;

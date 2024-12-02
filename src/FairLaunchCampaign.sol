@@ -34,6 +34,17 @@ contract FairLaunchCampaign is ICampaign, Ownable {
         return PRICE_PER_TOKEN;
     }
 
+    function getRaisedAmount() external view override returns (uint256) {
+        return raisedAmount;
+    }
+
+    function getConfig() external view override returns (uint256[] memory params) {
+        params = new uint256[](3);
+        params[0] = END_TIME;
+        params[1] = MINIMUM_GOAL;
+        params[2] = PRICE_PER_TOKEN;
+    }
+
     /**
      * @dev Contribute to the campaign.
      * @param contribution Amount of contribution in terms of raiseToken.

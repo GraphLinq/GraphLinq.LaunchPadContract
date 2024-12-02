@@ -1,12 +1,14 @@
 import type { BaseContract, BigNumberish, BytesLike, FunctionFragment, Result, Interface, EventFragment, AddressLike, ContractRunner, ContractMethod, Listener } from "ethers";
 import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, TypedLogDescription, TypedListener, TypedContractMethod } from "./common";
 export interface StealthLaunchCampaignInterface extends Interface {
-    getFunction(nameOrSignature: "MAX_CAP" | "PRICE_PER_TOKEN" | "contribute" | "getCampaignDetails" | "handleFailure" | "handleFinalization" | "isCampaignSuccessful" | "owner" | "pricePerToken" | "raisedAmount" | "renounceOwnership" | "transferOwnership"): FunctionFragment;
+    getFunction(nameOrSignature: "MAX_CAP" | "PRICE_PER_TOKEN" | "contribute" | "getCampaignDetails" | "getConfig" | "getRaisedAmount" | "handleFailure" | "handleFinalization" | "isCampaignSuccessful" | "owner" | "pricePerToken" | "raisedAmount" | "renounceOwnership" | "transferOwnership"): FunctionFragment;
     getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
     encodeFunctionData(functionFragment: "MAX_CAP", values?: undefined): string;
     encodeFunctionData(functionFragment: "PRICE_PER_TOKEN", values?: undefined): string;
     encodeFunctionData(functionFragment: "contribute", values: [BigNumberish, AddressLike]): string;
     encodeFunctionData(functionFragment: "getCampaignDetails", values?: undefined): string;
+    encodeFunctionData(functionFragment: "getConfig", values?: undefined): string;
+    encodeFunctionData(functionFragment: "getRaisedAmount", values?: undefined): string;
     encodeFunctionData(functionFragment: "handleFailure", values?: undefined): string;
     encodeFunctionData(functionFragment: "handleFinalization", values?: undefined): string;
     encodeFunctionData(functionFragment: "isCampaignSuccessful", values?: undefined): string;
@@ -19,6 +21,8 @@ export interface StealthLaunchCampaignInterface extends Interface {
     decodeFunctionResult(functionFragment: "PRICE_PER_TOKEN", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "contribute", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "getCampaignDetails", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "getConfig", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "getRaisedAmount", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "handleFailure", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "handleFinalization", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "isCampaignSuccessful", data: BytesLike): Result;
@@ -65,6 +69,8 @@ export interface StealthLaunchCampaign extends BaseContract {
     ], [
         [string, string, string]
     ], "view">;
+    getConfig: TypedContractMethod<[], [bigint[]], "view">;
+    getRaisedAmount: TypedContractMethod<[], [bigint], "view">;
     handleFailure: TypedContractMethod<[], [void], "nonpayable">;
     handleFinalization: TypedContractMethod<[], [void], "nonpayable">;
     isCampaignSuccessful: TypedContractMethod<[], [boolean], "view">;
@@ -87,6 +93,8 @@ export interface StealthLaunchCampaign extends BaseContract {
         bigint
     ], "nonpayable">;
     getFunction(nameOrSignature: "getCampaignDetails"): TypedContractMethod<[], [[string, string, string]], "view">;
+    getFunction(nameOrSignature: "getConfig"): TypedContractMethod<[], [bigint[]], "view">;
+    getFunction(nameOrSignature: "getRaisedAmount"): TypedContractMethod<[], [bigint], "view">;
     getFunction(nameOrSignature: "handleFailure"): TypedContractMethod<[], [void], "nonpayable">;
     getFunction(nameOrSignature: "handleFinalization"): TypedContractMethod<[], [void], "nonpayable">;
     getFunction(nameOrSignature: "isCampaignSuccessful"): TypedContractMethod<[], [boolean], "view">;

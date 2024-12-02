@@ -26,6 +26,8 @@ export interface ICampaignInterface extends Interface {
     nameOrSignature:
       | "contribute"
       | "getCampaignDetails"
+      | "getConfig"
+      | "getRaisedAmount"
       | "handleFailure"
       | "handleFinalization"
       | "isCampaignSuccessful"
@@ -38,6 +40,11 @@ export interface ICampaignInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "getCampaignDetails",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "getConfig", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "getRaisedAmount",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -60,6 +67,11 @@ export interface ICampaignInterface extends Interface {
   decodeFunctionResult(functionFragment: "contribute", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getCampaignDetails",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "getConfig", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getRaisedAmount",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -135,6 +147,10 @@ export interface ICampaign extends BaseContract {
     "view"
   >;
 
+  getConfig: TypedContractMethod<[], [bigint[]], "view">;
+
+  getRaisedAmount: TypedContractMethod<[], [bigint], "view">;
+
   handleFailure: TypedContractMethod<[], [void], "nonpayable">;
 
   handleFinalization: TypedContractMethod<[], [void], "nonpayable">;
@@ -157,6 +173,12 @@ export interface ICampaign extends BaseContract {
   getFunction(
     nameOrSignature: "getCampaignDetails"
   ): TypedContractMethod<[], [[string, string, string]], "view">;
+  getFunction(
+    nameOrSignature: "getConfig"
+  ): TypedContractMethod<[], [bigint[]], "view">;
+  getFunction(
+    nameOrSignature: "getRaisedAmount"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "handleFailure"
   ): TypedContractMethod<[], [void], "nonpayable">;

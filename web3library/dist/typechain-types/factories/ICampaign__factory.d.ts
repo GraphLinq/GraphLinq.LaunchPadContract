@@ -39,6 +39,26 @@ export declare class ICampaign__factory {
         readonly stateMutability: "pure";
     }, {
         readonly type: "function";
+        readonly name: "getConfig";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly name: "params";
+            readonly type: "uint256[]";
+            readonly internalType: "uint256[]";
+        }];
+        readonly stateMutability: "view";
+    }, {
+        readonly type: "function";
+        readonly name: "getRaisedAmount";
+        readonly inputs: readonly [];
+        readonly outputs: readonly [{
+            readonly name: "";
+            readonly type: "uint256";
+            readonly internalType: "uint256";
+        }];
+        readonly stateMutability: "view";
+    }, {
+        readonly type: "function";
         readonly name: "handleFailure";
         readonly inputs: readonly [];
         readonly outputs: readonly [];

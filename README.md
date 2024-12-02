@@ -32,7 +32,7 @@ forge script script/Deploy.s.sol --rpc-url YOUR_RPC_URL --broadcast
 
 ### Run anvil
 
-anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/[API_KEY] --fork-block-number 21002215
+anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/[API_KEY] --fork-block-number 21002215 --chain-id 31337
 
 ### Deploy
 

@@ -55,6 +55,32 @@ const _abi = [
   },
   {
     type: "function",
+    name: "getConfig",
+    inputs: [],
+    outputs: [
+      {
+        name: "params",
+        type: "uint256[]",
+        internalType: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getRaisedAmount",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "handleFailure",
     inputs: [],
     outputs: [],

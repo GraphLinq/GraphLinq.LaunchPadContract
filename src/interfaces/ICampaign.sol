@@ -8,4 +8,6 @@ interface ICampaign {
     function getCampaignDetails() external pure returns (string memory, string memory, string memory);
     function contribute(uint256 contribution, address contributor) external returns (uint256);
     function pricePerToken() external view returns (uint256);
+    function getRaisedAmount() external view returns (uint256);
+    function getConfig() external view returns (uint256[] memory params);
 }
