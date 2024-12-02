@@ -463,6 +463,25 @@ export class FundraiserWeb3Connect {
     }
 
     /**
+     * Fetches detailed information about a token
+     * @param tokenAddr - Address of the erc20 token
+     * @returns An object containing details
+     */
+    public async getTokenInfo(tokenAddr: string) {
+        return this.safeExecute(async () => {
+            const tokenContract = ERC20__factory.connect(tokenAddr, this.provider);
+            const name = await tokenContract.name();
+            const symbol = await tokenContract.symbol();
+            const decimals = await tokenContract.decimals();
+            return {
+                name,
+                symbol,
+                decimals
+            };
+        });
+    }
+
+    /**
      * Fetches all fundraisers created by the factory.
      */
     public async getFundraisersCount() {

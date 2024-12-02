@@ -2351,6 +2351,19 @@ class FundraiserWeb3Connect {
             };
         });
     }
+    async getTokenInfo(tokenAddr) {
+        return this.safeExecute(async () => {
+            const tokenContract = ERC20__factory.connect(tokenAddr, this.provider);
+            const name = await tokenContract.name();
+            const symbol = await tokenContract.symbol();
+            const decimals = await tokenContract.decimals();
+            return {
+                name,
+                symbol,
+                decimals
+            };
+        });
+    }
     async getFundraisersCount() {
         return this.safeExecute(async () => {
             return await this.fundraiserFactory.fundraiserID();

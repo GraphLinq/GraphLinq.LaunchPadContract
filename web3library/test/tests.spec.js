@@ -160,7 +160,7 @@ describe('FundraiserWeb3Connect', function () {
       };
 
       const campaignParams = {
-        maxCap: 0,
+        maxCap: BigInt("900000000000000000000"),
         pricePerToken: BigInt("1000000000000000000"),
       }
 
