@@ -41,7 +41,7 @@ export declare namespace Fundraiser {
     };
 }
 export interface FundraiserInterface extends Interface {
-    getFunction(nameOrSignature: "WETH" | "campaign" | "claimFunds" | "claimTokens" | "claimed" | "contribute" | "contributions" | "createdTimestamp" | "finalize" | "finalizedTimestamp" | "getRequiredAmountsForLiquidity" | "info" | "initSwapPair" | "initialize" | "owner" | "poolFee" | "positionManager" | "purchasedTokens" | "raiseToken" | "raisedAmount" | "renounceOwnership" | "saleToken" | "setFailed" | "soldAmount" | "state" | "transferOwnership" | "vesting" | "vestingDuration" | "vestingStartDelta"): FunctionFragment;
+    getFunction(nameOrSignature: "WETH" | "campaign" | "claimFunds" | "claimTokens" | "claimed" | "contribute" | "contributions" | "createdTimestamp" | "finalize" | "finalizedTimestamp" | "getRequiredAmountsForLiquidity" | "info" | "initSwapPair" | "initialize" | "owner" | "participantsCount" | "poolFee" | "positionManager" | "purchasedTokens" | "raiseToken" | "raisedAmount" | "renounceOwnership" | "saleToken" | "setFailed" | "soldAmount" | "state" | "transferOwnership" | "vesting" | "vestingDuration" | "vestingStartDelta"): FunctionFragment;
     getEvent(nameOrSignatureOrTopic: "Claimed" | "Contribution" | "Failed" | "Finalized" | "FundsClaimed" | "Initialized" | "LiquidityMintingFailed" | "OwnershipTransferred" | "SwapPairInitialized"): EventFragment;
     encodeFunctionData(functionFragment: "WETH", values?: undefined): string;
     encodeFunctionData(functionFragment: "campaign", values?: undefined): string;
@@ -58,6 +58,7 @@ export interface FundraiserInterface extends Interface {
     encodeFunctionData(functionFragment: "initSwapPair", values: [BigNumberish, BigNumberish]): string;
     encodeFunctionData(functionFragment: "initialize", values: [Fundraiser.FundraiserParamsStruct]): string;
     encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+    encodeFunctionData(functionFragment: "participantsCount", values?: undefined): string;
     encodeFunctionData(functionFragment: "poolFee", values?: undefined): string;
     encodeFunctionData(functionFragment: "positionManager", values?: undefined): string;
     encodeFunctionData(functionFragment: "purchasedTokens", values: [AddressLike]): string;
@@ -87,6 +88,7 @@ export interface FundraiserInterface extends Interface {
     decodeFunctionResult(functionFragment: "initSwapPair", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "participantsCount", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "poolFee", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "positionManager", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "purchasedTokens", data: BytesLike): Result;
@@ -257,6 +259,7 @@ export interface Fundraiser extends BaseContract {
         void
     ], "nonpayable">;
     owner: TypedContractMethod<[], [string], "view">;
+    participantsCount: TypedContractMethod<[], [bigint], "view">;
     poolFee: TypedContractMethod<[], [bigint], "view">;
     positionManager: TypedContractMethod<[], [string], "view">;
     purchasedTokens: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
@@ -317,6 +320,7 @@ export interface Fundraiser extends BaseContract {
         void
     ], "nonpayable">;
     getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
+    getFunction(nameOrSignature: "participantsCount"): TypedContractMethod<[], [bigint], "view">;
     getFunction(nameOrSignature: "poolFee"): TypedContractMethod<[], [bigint], "view">;
     getFunction(nameOrSignature: "positionManager"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "purchasedTokens"): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;

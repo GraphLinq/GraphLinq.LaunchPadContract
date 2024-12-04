@@ -418,6 +418,7 @@ export class FundraiserWeb3Connect {
             let poolFee = await fundraiser.poolFee();
             let projetInfo = await fundraiser.info();
             let campaign = await fundraiser.campaign();
+            const participants = await fundraiser.participantsCount();
             const campaignContract = ICampaign__factory.connect(campaign, this.provider);
             const campaignDetails = await campaignContract.getCampaignDetails();
             const pricePerToken = await campaignContract.pricePerToken();
@@ -465,7 +466,8 @@ export class FundraiserWeb3Connect {
                 pricePerToken,
                 saleTokenBalance,
                 raiseTokenBalance,
-                config
+                config,
+                participants
             };
         });
     }

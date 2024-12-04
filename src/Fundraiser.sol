@@ -51,6 +51,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     
     uint256 public raisedAmount; // Total raised amount in raised tokens
     uint256 public soldAmount; // Total amount of tokens sold
+    uint256 public participantsCount;
     uint256 public finalizedTimestamp;
     uint256 public createdTimestamp;
     
@@ -167,6 +168,10 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
 
         // Process contribution
         uint256 tokens = campaign.contribute(contributionAmount, msg.sender);
+        // count unique participants
+        if(contributions[msg.sender] == 0) {
+            participantsCount++;
+        }
         contributions[msg.sender] += contributionAmount;
         purchasedTokens[msg.sender] += tokens;
         raisedAmount += contributionAmount;
