@@ -1,5 +1,5 @@
 import type { BaseContract, BigNumberish, BytesLike, FunctionFragment, Result, Interface, EventFragment, AddressLike, ContractRunner, ContractMethod, Listener } from "ethers";
-import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, TypedLogDescription, TypedListener, TypedContractMethod } from "./common";
+import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, TypedLogDescription, TypedListener, TypedContractMethod } from "../common";
 export declare namespace Fundraiser {
     type FundraiserParamsStruct = {
         saleToken: AddressLike;
@@ -41,8 +41,9 @@ export declare namespace Fundraiser {
     };
 }
 export interface FundraiserInterface extends Interface {
-    getFunction(nameOrSignature: "campaign" | "claimFunds" | "claimTokens" | "claimed" | "contribute" | "contributions" | "createdTimestamp" | "finalize" | "finalizedTimestamp" | "getRequiredAmountsForLiquidity" | "info" | "initSwapPair" | "initialize" | "owner" | "poolFee" | "positionManager" | "purchasedTokens" | "raiseToken" | "raisedAmount" | "renounceOwnership" | "saleToken" | "setFailed" | "soldAmount" | "state" | "transferOwnership" | "vesting" | "vestingDuration" | "vestingStartDelta"): FunctionFragment;
+    getFunction(nameOrSignature: "WETH" | "campaign" | "claimFunds" | "claimTokens" | "claimed" | "contribute" | "contributions" | "createdTimestamp" | "finalize" | "finalizedTimestamp" | "getRequiredAmountsForLiquidity" | "info" | "initSwapPair" | "initialize" | "owner" | "poolFee" | "positionManager" | "purchasedTokens" | "raiseToken" | "raisedAmount" | "renounceOwnership" | "saleToken" | "setFailed" | "soldAmount" | "state" | "transferOwnership" | "vesting" | "vestingDuration" | "vestingStartDelta"): FunctionFragment;
     getEvent(nameOrSignatureOrTopic: "Claimed" | "Contribution" | "Failed" | "Finalized" | "FundsClaimed" | "Initialized" | "LiquidityMintingFailed" | "OwnershipTransferred" | "SwapPairInitialized"): EventFragment;
+    encodeFunctionData(functionFragment: "WETH", values?: undefined): string;
     encodeFunctionData(functionFragment: "campaign", values?: undefined): string;
     encodeFunctionData(functionFragment: "claimFunds", values?: undefined): string;
     encodeFunctionData(functionFragment: "claimTokens", values?: undefined): string;
@@ -71,6 +72,7 @@ export interface FundraiserInterface extends Interface {
     encodeFunctionData(functionFragment: "vesting", values?: undefined): string;
     encodeFunctionData(functionFragment: "vestingDuration", values?: undefined): string;
     encodeFunctionData(functionFragment: "vestingStartDelta", values?: undefined): string;
+    decodeFunctionResult(functionFragment: "WETH", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "campaign", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "claimFunds", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "claimTokens", data: BytesLike): Result;
@@ -214,11 +216,12 @@ export interface Fundraiser extends BaseContract {
     listeners<TCEvent extends TypedContractEvent>(event: TCEvent): Promise<Array<TypedListener<TCEvent>>>;
     listeners(eventName?: string): Promise<Array<Listener>>;
     removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
+    WETH: TypedContractMethod<[], [string], "view">;
     campaign: TypedContractMethod<[], [string], "view">;
     claimFunds: TypedContractMethod<[], [void], "nonpayable">;
     claimTokens: TypedContractMethod<[], [void], "nonpayable">;
     claimed: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
-    contribute: TypedContractMethod<[amount: BigNumberish], [void], "nonpayable">;
+    contribute: TypedContractMethod<[amount: BigNumberish], [void], "payable">;
     contributions: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
     createdTimestamp: TypedContractMethod<[], [bigint], "view">;
     finalize: TypedContractMethod<[], [void], "nonpayable">;
@@ -273,11 +276,12 @@ export interface Fundraiser extends BaseContract {
     vestingDuration: TypedContractMethod<[], [bigint], "view">;
     vestingStartDelta: TypedContractMethod<[], [bigint], "view">;
     getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
+    getFunction(nameOrSignature: "WETH"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "campaign"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "claimFunds"): TypedContractMethod<[], [void], "nonpayable">;
     getFunction(nameOrSignature: "claimTokens"): TypedContractMethod<[], [void], "nonpayable">;
     getFunction(nameOrSignature: "claimed"): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
-    getFunction(nameOrSignature: "contribute"): TypedContractMethod<[amount: BigNumberish], [void], "nonpayable">;
+    getFunction(nameOrSignature: "contribute"): TypedContractMethod<[amount: BigNumberish], [void], "payable">;
     getFunction(nameOrSignature: "contributions"): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
     getFunction(nameOrSignature: "createdTimestamp"): TypedContractMethod<[], [bigint], "view">;
     getFunction(nameOrSignature: "finalize"): TypedContractMethod<[], [void], "nonpayable">;

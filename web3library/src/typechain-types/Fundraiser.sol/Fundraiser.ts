@@ -21,7 +21,7 @@ import type {
   TypedLogDescription,
   TypedListener,
   TypedContractMethod,
-} from "./common";
+} from "../common";
 
 export declare namespace Fundraiser {
   export type FundraiserParamsStruct = {
@@ -68,6 +68,7 @@ export declare namespace Fundraiser {
 export interface FundraiserInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "WETH"
       | "campaign"
       | "claimFunds"
       | "claimTokens"
@@ -111,6 +112,7 @@ export interface FundraiserInterface extends Interface {
       | "SwapPairInitialized"
   ): EventFragment;
 
+  encodeFunctionData(functionFragment: "WETH", values?: undefined): string;
   encodeFunctionData(functionFragment: "campaign", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "claimFunds",
@@ -197,6 +199,7 @@ export interface FundraiserInterface extends Interface {
     values?: undefined
   ): string;
 
+  decodeFunctionResult(functionFragment: "WETH", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "campaign", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claimFunds", data: BytesLike): Result;
   decodeFunctionResult(
@@ -416,6 +419,8 @@ export interface Fundraiser extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  WETH: TypedContractMethod<[], [string], "view">;
+
   campaign: TypedContractMethod<[], [string], "view">;
 
   claimFunds: TypedContractMethod<[], [void], "nonpayable">;
@@ -424,7 +429,7 @@ export interface Fundraiser extends BaseContract {
 
   claimed: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
-  contribute: TypedContractMethod<[amount: BigNumberish], [void], "nonpayable">;
+  contribute: TypedContractMethod<[amount: BigNumberish], [void], "payable">;
 
   contributions: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
@@ -503,6 +508,9 @@ export interface Fundraiser extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "WETH"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "campaign"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -516,7 +524,7 @@ export interface Fundraiser extends BaseContract {
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "contribute"
-  ): TypedContractMethod<[amount: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<[amount: BigNumberish], [void], "payable">;
   getFunction(
     nameOrSignature: "contributions"
   ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;

@@ -253,8 +253,16 @@ export class FundraiserWeb3Connect {
     public async contribute(signer: Signer, fundraiserAddr: string, amount: BigNumberish) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-            const tx = await fundraiser.contribute(amount);
-            return await this.addTx(tx);
+            const raiseToken = await fundraiser.raiseToken();
+            const weth = await fundraiser.WETH();
+            if(raiseToken === weth) {
+                const tx = await fundraiser.contribute(0, {value: amount});
+                return await this.addTx(tx);
+            } else {
+                const tx = await fundraiser.contribute(amount);
+                return await this.addTx(tx);
+            }
+            
         });
     }
 

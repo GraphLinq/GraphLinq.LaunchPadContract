@@ -12,6 +12,15 @@ import "./interfaces/IVesting.sol";
 import "./interfaces/INonfungiblePositionManager.sol";
 import "./interfaces/ICampaign.sol";
 
+/// @title Interface for WETH9
+interface IWETH9 is IERC20 {
+    /// @notice Deposit ether to get wrapped ether
+    function deposit() external payable;
+
+    /// @notice Withdraw wrapped ether to get ether
+    function withdraw(uint256) external;
+}
+
 contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -50,6 +59,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     ICampaign public campaign;
     IVesting public vesting;
     INonfungiblePositionManager public positionManager;
+    IWETH9 public immutable WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
     mapping(address => uint256) public contributions;
     mapping(address => uint256) public purchasedTokens;
@@ -131,43 +141,74 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
 
     /**
      * @dev Contribute to the fundraising campaign
-     * @param amount The amount of raise tokens to contribute
+     * @param amount The amount of raise tokens to contribute, 0 for GLQ
     */
-    function contribute(uint256 amount) public nonReentrant() {
+    function contribute(uint256 amount) public payable nonReentrant {
         require(state == FundraiserState.Active, "Fundraising is not active");
-        uint256 tokens = campaign.contribute(amount, msg.sender);
-        contributions[msg.sender] += amount;
+
+        uint256 contributionAmount = amount;
+
+        // If GLQ is sent, ensure it's the exact raiseToken and wrap it
+        if (msg.value > 0) {
+            require(address(raiseToken) == address(WETH), "GLW can only be used with WGLW as the raise token");
+            require(amount == 0, "Cannot specify both ETH and token amount");
+            contributionAmount = msg.value;
+
+            // Wrap ETH into WETH
+            WETH.deposit{value: msg.value}();
+        } else {
+            // Ensure sufficient allowance for token transfers
+            uint256 allowance = raiseToken.allowance(msg.sender, address(this));
+            require(allowance >= amount, "Insufficient allowance");
+
+            // Transfer raiseToken from the contributor
+            raiseToken.safeTransferFrom(msg.sender, address(this), amount);
+        }
+
+        // Process contribution
+        uint256 tokens = campaign.contribute(contributionAmount, msg.sender);
+        contributions[msg.sender] += contributionAmount;
         purchasedTokens[msg.sender] += tokens;
-        raisedAmount += amount;
+        raisedAmount += contributionAmount;
         soldAmount += tokens;
-        uint256 allowance = raiseToken.allowance(msg.sender, address(this));
-        require(allowance >= amount, "Insufficient allowance");
-        raiseToken.safeTransferFrom(msg.sender, address(this), amount);
-        emit Contribution(msg.sender, amount);
+
+        emit Contribution(msg.sender, contributionAmount);
     }
+
 
     /**
      * @dev Finalize the fundraising campaign when the goal is reached
     */
-    function finalize() public onlyOwner nonReentrant() {
+    function finalize() public onlyOwner nonReentrant {
         require(state == FundraiserState.Active, "Fundraising not active");
         state = FundraiserState.Finalized;
         campaign.handleFinalization(); // Check if the campaign is successful
-        
+
         // Transfer raised tokens to the owner
-        raiseToken.safeTransfer(owner(), raisedAmount);
+        if (address(raiseToken) == address(WETH)) {
+            // Unwrap WETH into ETH
+            uint256 wethBalance = WETH.balanceOf(address(this));
+            WETH.withdraw(wethBalance);
+            payable(owner()).transfer(wethBalance);
+        } else {
+            raiseToken.safeTransfer(owner(), raisedAmount);
+        }
+
         // Transfer remaining sale tokens to the owner
         uint256 saleTokenBalance = saleToken.balanceOf(address(this));
-        if(saleTokenBalance > soldAmount) {
+        if (saleTokenBalance > soldAmount) {
             saleToken.safeTransfer(owner(), saleTokenBalance - soldAmount);
         }
-        // If vesting is enabled transfer sold tokens to the vesting contract
+
+        // If vesting is enabled, transfer sold tokens to the vesting contract
         if (vestingDuration > 0) {
             saleToken.safeTransfer(address(vesting), soldAmount);
         }
+
         finalizedTimestamp = block.timestamp;
         emit Finalized();
     }
+
 
     /**
      * @dev Set the fundraising as failed if the campaign type allows so
@@ -192,9 +233,19 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         claimed[msg.sender] = true;
 
         uint256 contributionAmount = contributions[msg.sender];
+
+        if (address(raiseToken) == address(WETH)) {
+            // Unwrap WETH into GLQ
+            WETH.withdraw(contributionAmount);
+            payable(msg.sender).transfer(contributionAmount);
+        } else {
+            // Transfer raiseToken
+            raiseToken.safeTransfer(msg.sender, contributionAmount);
+        }
+
         emit FundsClaimed(msg.sender, contributionAmount);
-        raiseToken.safeTransfer(msg.sender, contributionAmount);
     }
+
 
     /**
      * @dev Claim the tokens after the fundraising is finalized
@@ -323,4 +374,13 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         uint160 sqrtPriceX96 = uint160(Math.sqrt(ratioX96) << 48); // Shift by 48 to get the sqrtPriceX96 format
         return sqrtPriceX96;
     }
+
+    receive() external payable {
+        require(msg.sender == address(WETH), "Direct ETH deposits not allowed");
+    }
+
+    fallback() external payable {
+        revert("Fallback function triggered");
+    }
+
 }

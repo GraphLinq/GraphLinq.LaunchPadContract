@@ -28,7 +28,7 @@ describe('FundraiserWeb3Connect', function () {
   const contributorPrivateKey = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d';
 
   before(async function () {
-    const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545'); // Local node
+    const provider = new ethers.JsonRpcProvider('http://52.90.60.224:8545'); // Graphlinq test node
     owner = new ethers.Wallet(ownerPrivateKey, provider);
     contributor = new ethers.Wallet(contributorPrivateKey, provider);
 

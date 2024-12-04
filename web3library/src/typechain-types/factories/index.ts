@@ -4,6 +4,7 @@
 export * as deploySSol from "./Deploy.s.sol";
 export * as erc20 from "./ERC20";
 export * as fairLaunchCampaignTestTSol from "./FairLaunchCampaignTest.t.sol";
+export * as fundraiserSol from "./Fundraiser.sol";
 export * as fundraiserFactoryTestTSol from "./FundraiserFactoryTest.t.sol";
 export * as ierc721Sol from "./IERC721.sol";
 export * as stdErrorSol from "./StdError.sol";
@@ -26,7 +27,6 @@ export { ERC1967Utils__factory } from "./ERC1967Utils__factory";
 export { ERC20__factory } from "./ERC20__factory";
 export { FairLaunchCampaign__factory } from "./FairLaunchCampaign__factory";
 export { FairLaunchFactory__factory } from "./FairLaunchFactory__factory";
-export { Fundraiser__factory } from "./Fundraiser__factory";
 export { FundraiserFactory__factory } from "./FundraiserFactory__factory";
 export { FundraiserFactoryV2__factory } from "./FundraiserFactoryV2__factory";
 export { IBeacon__factory } from "./IBeacon__factory";

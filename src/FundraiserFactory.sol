@@ -142,7 +142,7 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
         // First, calculate the number of fundraisers matching the state to allocate memory
         uint256 count = 0;
         for (uint256 i = startID; i < endID; i++) {
-            if (Fundraiser(fundraisers[i]).state() == state) {
+            if (Fundraiser(payable(fundraisers[i])).state() == state) {
                 count++;
             }
         }
@@ -153,7 +153,7 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
         // Populate the list with matching fundraisers
         uint256 index = 0;
         for (uint256 i = startID; i < endID; i++) {
-            if (Fundraiser(fundraisers[i]).state() == state) {
+            if (Fundraiser(payable(fundraisers[i])).state() == state) {
                 list[index++] = fundraisers[i];
             }
         }

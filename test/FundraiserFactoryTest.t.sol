@@ -75,7 +75,7 @@ contract FundraiserFactoryTest is Test {
         );
 
         // Create the fundraiser
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, stealthLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, stealthLaunchID));
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
@@ -105,7 +105,7 @@ contract FundraiserFactoryTest is Test {
         );
 
         // Create the fundraiser
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
@@ -133,7 +133,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18  // 1 ETH per token
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, stealthLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, stealthLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint sale tokens to the fundraiser
@@ -172,7 +172,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18  // 1 ETH per token
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint sale tokens to the fundraiser
@@ -216,7 +216,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18  // 1 ETH per token
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint sale tokens to the fundraiser
@@ -264,7 +264,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18  // 1 ETH per token
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint sale tokens to the fundraiser
@@ -320,7 +320,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18  // 1 ETH per token
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint sale tokens to the fundraiser
@@ -370,7 +370,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint raise tokens to the contributor
@@ -408,7 +408,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint sale tokens to the fundraiser
@@ -465,7 +465,7 @@ contract FundraiserFactoryTest is Test {
             1 * 10**18
         );
 
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Mint sale tokens to the fundraiser
@@ -545,7 +545,7 @@ contract FundraiserFactoryTest is Test {
         );
 
         // Create the fundraiser
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
         // Finalize the fundraiser

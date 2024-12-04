@@ -77,7 +77,7 @@ contract UpgradeabilityTest is Test {
         );
 
         // Create the fundraiser
-        address fundraiserAddress = factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID);
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
