@@ -2250,6 +2250,15 @@ class FundraiserWeb3Connect {
             return await this.addTx(tx);
         });
     }
+    async transferERC20(signer, tokenAddr, recipientAddr, amount) {
+        return this.safeExecute(async () => {
+            const tokenContract = new ethers.Contract(tokenAddr, [
+                "function transfer(address recipient, uint256 amount) public returns (bool)"
+            ], signer);
+            const tx = await tokenContract.transfer(recipientAddr, amount);
+            return await this.addTx(tx);
+        });
+    }
     async checkAllowance(signer, tokenAddr, spenderAddr) {
         return this.safeExecute(async () => {
             const tokenContract = new ethers.Contract(tokenAddr, [
@@ -2362,6 +2371,7 @@ class FundraiserWeb3Connect {
             let poolAddr = await fundraiser.pool();
             let projetInfo = await fundraiser.info();
             let campaign = await fundraiser.campaign();
+            let owner = await fundraiser.owner();
             const participants = await fundraiser.participantsCount();
             const campaignContract = ICampaign__factory.connect(campaign, this.provider);
             const campaignDetails = await campaignContract.getCampaignDetails();
@@ -2406,7 +2416,8 @@ class FundraiserWeb3Connect {
                 raiseTokenBalance,
                 config,
                 participants,
-                poolAddr
+                poolAddr,
+                owner
             };
         });
     }

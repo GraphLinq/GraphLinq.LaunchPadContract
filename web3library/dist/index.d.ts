@@ -41,6 +41,7 @@ export declare class FundraiserWeb3Connect {
         pricePerToken: BigNumberish;
     }): Promise<ContractTransactionResponse>;
     approveERC20(signer: Signer, tokenAddr: string, spenderAddr: string, amount: BigNumberish): Promise<ContractTransactionResponse>;
+    transferERC20(signer: Signer, tokenAddr: string, recipientAddr: string, amount: BigNumberish): Promise<ContractTransactionResponse>;
     checkAllowance(signer: Signer, tokenAddr: string, spenderAddr: string): Promise<any>;
     contribute(signer: Signer, fundraiserAddr: string, amount: BigNumberish): Promise<ContractTransactionResponse>;
     getContribution(signer: Signer, fundraiserAddr: string): Promise<bigint>;
@@ -83,6 +84,7 @@ export declare class FundraiserWeb3Connect {
         config: bigint[];
         participants: bigint;
         poolAddr: string;
+        owner: string;
     }>;
     getTokenInfo(tokenAddr: string): Promise<{
         name: string;

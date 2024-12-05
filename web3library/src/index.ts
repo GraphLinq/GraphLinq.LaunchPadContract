@@ -216,6 +216,38 @@ export class FundraiserWeb3Connect {
     }
 
     /**
+     * Transfers an ERC20 token to a specific address.
+     * @param signer - The signer instance for transaction signing.
+     * @param tokenAddr - Address of the ERC20 token.
+     * @param recipientAddr - Address that will receive the tokens
+     * @param amount - Amount of tokens to approve.
+     */
+    public async transferERC20(
+        signer: Signer,
+        tokenAddr: string,
+        recipientAddr: string,
+        amount: BigNumberish
+    ) {
+        return this.safeExecute(async () => {
+            // Connect to the ERC20 contract using the signer
+            const tokenContract = new ethers.Contract(
+                tokenAddr,
+                [
+                    // Minimal ERC20 ABI for approve function
+                    "function transfer(address recipient, uint256 amount) public returns (bool)"
+                ],
+                signer
+            );
+    
+            // Call the `approve` function on the token contract
+            const tx = await tokenContract.transfer(recipientAddr, amount);
+    
+            // Add transaction to pending
+            return await this.addTx(tx);
+        });
+    }
+
+    /**
      * Checks the allowance of a spender for a specific ERC20 token.
      * @param signer - The signer instance for transaction signing.
      * @param tokenAddr - Address of the ERC20 token.
@@ -419,6 +451,7 @@ export class FundraiserWeb3Connect {
             let poolAddr = await fundraiser.pool();
             let projetInfo = await fundraiser.info();
             let campaign = await fundraiser.campaign();
+            let owner = await fundraiser.owner();
             const participants = await fundraiser.participantsCount();
             const campaignContract = ICampaign__factory.connect(campaign, this.provider);
             const campaignDetails = await campaignContract.getCampaignDetails();
@@ -469,7 +502,8 @@ export class FundraiserWeb3Connect {
                 raiseTokenBalance,
                 config,
                 participants,
-                poolAddr
+                poolAddr,
+                owner
             };
         });
     }
