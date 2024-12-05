@@ -82,6 +82,7 @@ export declare class FundraiserWeb3Connect {
         raiseTokenBalance: bigint;
         config: bigint[];
         participants: bigint;
+        poolAddr: string;
     }>;
     getTokenInfo(tokenAddr: string): Promise<{
         name: string;

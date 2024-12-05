@@ -84,6 +84,7 @@ export interface FundraiserInterface extends Interface {
       | "initialize"
       | "owner"
       | "participantsCount"
+      | "pool"
       | "poolFee"
       | "positionManager"
       | "purchasedTokens"
@@ -162,6 +163,7 @@ export interface FundraiserInterface extends Interface {
     functionFragment: "participantsCount",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "pool", values?: undefined): string;
   encodeFunctionData(functionFragment: "poolFee", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "positionManager",
@@ -241,6 +243,7 @@ export interface FundraiserInterface extends Interface {
     functionFragment: "participantsCount",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "pool", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "poolFee", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "positionManager",
@@ -482,6 +485,8 @@ export interface Fundraiser extends BaseContract {
 
   participantsCount: TypedContractMethod<[], [bigint], "view">;
 
+  pool: TypedContractMethod<[], [string], "view">;
+
   poolFee: TypedContractMethod<[], [bigint], "view">;
 
   positionManager: TypedContractMethod<[], [string], "view">;
@@ -588,6 +593,9 @@ export interface Fundraiser extends BaseContract {
   getFunction(
     nameOrSignature: "participantsCount"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "pool"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "poolFee"
   ): TypedContractMethod<[], [bigint], "view">;

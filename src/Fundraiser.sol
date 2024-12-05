@@ -61,6 +61,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     IVesting public vesting;
     INonfungiblePositionManager public positionManager;
     IWETH9 public immutable WETH = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    address public pool;
 
     mapping(address => uint256) public contributions;
     mapping(address => uint256) public purchasedTokens;
@@ -133,7 +134,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
             1000 * 10**18);
 
         // Compute sqrtPriceX96 and init the pool
-        positionManager.createAndInitializePoolIfNecessary(
+        pool = positionManager.createAndInitializePoolIfNecessary(
             token0,
             token1,
             poolFee,

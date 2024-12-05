@@ -416,6 +416,7 @@ export class FundraiserWeb3Connect {
             let raiseToken = await fundraiser.raiseToken();
             let state = await fundraiser.state();
             let poolFee = await fundraiser.poolFee();
+            let poolAddr = await fundraiser.pool();
             let projetInfo = await fundraiser.info();
             let campaign = await fundraiser.campaign();
             const participants = await fundraiser.participantsCount();
@@ -467,7 +468,8 @@ export class FundraiserWeb3Connect {
                 saleTokenBalance,
                 raiseTokenBalance,
                 config,
-                participants
+                participants,
+                poolAddr
             };
         });
     }
