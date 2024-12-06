@@ -41,8 +41,8 @@ export declare namespace Fundraiser {
     };
 }
 export interface FundraiserInterface extends Interface {
-    getFunction(nameOrSignature: "WETH" | "campaign" | "claimFunds" | "claimTokens" | "claimed" | "contribute" | "contributions" | "createdTimestamp" | "finalize" | "finalizedTimestamp" | "getRequiredAmountsForLiquidity" | "info" | "initSwapPair" | "initialize" | "owner" | "participantsCount" | "pool" | "poolFee" | "positionManager" | "purchasedTokens" | "raiseToken" | "raisedAmount" | "renounceOwnership" | "saleToken" | "setFailed" | "soldAmount" | "state" | "transferOwnership" | "vesting" | "vestingDuration" | "vestingStartDelta"): FunctionFragment;
-    getEvent(nameOrSignatureOrTopic: "Claimed" | "Contribution" | "Failed" | "Finalized" | "FundsClaimed" | "Initialized" | "LiquidityMintingFailed" | "OwnershipTransferred" | "SwapPairInitialized"): EventFragment;
+    getFunction(nameOrSignature: "WETH" | "campaign" | "claimFunds" | "claimTokens" | "claimed" | "contribute" | "contributions" | "createdTimestamp" | "finalize" | "finalizedTimestamp" | "getRequiredAmountsForLiquidity" | "info" | "initialize" | "owner" | "participantsCount" | "pool" | "poolFee" | "positionManager" | "provideLiquidity" | "purchasedTokens" | "raiseToken" | "raisedAmount" | "renounceOwnership" | "saleToken" | "setFailed" | "soldAmount" | "state" | "transferOwnership" | "vesting" | "vestingDuration" | "vestingStartDelta"): FunctionFragment;
+    getEvent(nameOrSignatureOrTopic: "Claimed" | "Contribution" | "Failed" | "Finalized" | "FundsClaimed" | "Initialized" | "LiquidityMintingFailed" | "LiquidityProvided" | "OwnershipTransferred" | "SwapPairInitialized"): EventFragment;
     encodeFunctionData(functionFragment: "WETH", values?: undefined): string;
     encodeFunctionData(functionFragment: "campaign", values?: undefined): string;
     encodeFunctionData(functionFragment: "claimFunds", values?: undefined): string;
@@ -55,13 +55,13 @@ export interface FundraiserInterface extends Interface {
     encodeFunctionData(functionFragment: "finalizedTimestamp", values?: undefined): string;
     encodeFunctionData(functionFragment: "getRequiredAmountsForLiquidity", values: [BigNumberish]): string;
     encodeFunctionData(functionFragment: "info", values?: undefined): string;
-    encodeFunctionData(functionFragment: "initSwapPair", values: [BigNumberish, BigNumberish]): string;
     encodeFunctionData(functionFragment: "initialize", values: [Fundraiser.FundraiserParamsStruct]): string;
     encodeFunctionData(functionFragment: "owner", values?: undefined): string;
     encodeFunctionData(functionFragment: "participantsCount", values?: undefined): string;
     encodeFunctionData(functionFragment: "pool", values?: undefined): string;
     encodeFunctionData(functionFragment: "poolFee", values?: undefined): string;
     encodeFunctionData(functionFragment: "positionManager", values?: undefined): string;
+    encodeFunctionData(functionFragment: "provideLiquidity", values: [BigNumberish, BigNumberish, BigNumberish]): string;
     encodeFunctionData(functionFragment: "purchasedTokens", values: [AddressLike]): string;
     encodeFunctionData(functionFragment: "raiseToken", values?: undefined): string;
     encodeFunctionData(functionFragment: "raisedAmount", values?: undefined): string;
@@ -86,13 +86,13 @@ export interface FundraiserInterface extends Interface {
     decodeFunctionResult(functionFragment: "finalizedTimestamp", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "getRequiredAmountsForLiquidity", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "info", data: BytesLike): Result;
-    decodeFunctionResult(functionFragment: "initSwapPair", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "participantsCount", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "pool", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "poolFee", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "positionManager", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "provideLiquidity", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "purchasedTokens", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "raiseToken", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "raisedAmount", data: BytesLike): Result;
@@ -183,6 +183,21 @@ export declare namespace LiquidityMintingFailedEvent {
     type Log = TypedEventLog<Event>;
     type LogDescription = TypedLogDescription<Event>;
 }
+export declare namespace LiquidityProvidedEvent {
+    type InputTuple = [
+        raiseTokenAmount: BigNumberish,
+        saleTokenAmount: BigNumberish
+    ];
+    type OutputTuple = [raiseTokenAmount: bigint, saleTokenAmount: bigint];
+    interface OutputObject {
+        raiseTokenAmount: bigint;
+        saleTokenAmount: bigint;
+    }
+    type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+    type Filter = TypedDeferredTopicFilter<Event>;
+    type Log = TypedEventLog<Event>;
+    type LogDescription = TypedLogDescription<Event>;
+}
 export declare namespace OwnershipTransferredEvent {
     type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
     type OutputTuple = [previousOwner: string, newOwner: string];
@@ -249,12 +264,6 @@ export interface Fundraiser extends BaseContract {
             websiteLink: string;
         }
     ], "view">;
-    initSwapPair: TypedContractMethod<[
-        tickLower: BigNumberish,
-        tickUpper: BigNumberish
-    ], [
-        void
-    ], "nonpayable">;
     initialize: TypedContractMethod<[
         params: Fundraiser.FundraiserParamsStruct
     ], [
@@ -265,6 +274,13 @@ export interface Fundraiser extends BaseContract {
     pool: TypedContractMethod<[], [string], "view">;
     poolFee: TypedContractMethod<[], [bigint], "view">;
     positionManager: TypedContractMethod<[], [string], "view">;
+    provideLiquidity: TypedContractMethod<[
+        desiredRaiseTokenLiquidity: BigNumberish,
+        tickLower: BigNumberish,
+        tickUpper: BigNumberish
+    ], [
+        void
+    ], "payable">;
     purchasedTokens: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
     raiseToken: TypedContractMethod<[], [string], "view">;
     raisedAmount: TypedContractMethod<[], [bigint], "view">;
@@ -311,12 +327,6 @@ export interface Fundraiser extends BaseContract {
             websiteLink: string;
         }
     ], "view">;
-    getFunction(nameOrSignature: "initSwapPair"): TypedContractMethod<[
-        tickLower: BigNumberish,
-        tickUpper: BigNumberish
-    ], [
-        void
-    ], "nonpayable">;
     getFunction(nameOrSignature: "initialize"): TypedContractMethod<[
         params: Fundraiser.FundraiserParamsStruct
     ], [
@@ -327,6 +337,13 @@ export interface Fundraiser extends BaseContract {
     getFunction(nameOrSignature: "pool"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "poolFee"): TypedContractMethod<[], [bigint], "view">;
     getFunction(nameOrSignature: "positionManager"): TypedContractMethod<[], [string], "view">;
+    getFunction(nameOrSignature: "provideLiquidity"): TypedContractMethod<[
+        desiredRaiseTokenLiquidity: BigNumberish,
+        tickLower: BigNumberish,
+        tickUpper: BigNumberish
+    ], [
+        void
+    ], "payable">;
     getFunction(nameOrSignature: "purchasedTokens"): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
     getFunction(nameOrSignature: "raiseToken"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "raisedAmount"): TypedContractMethod<[], [bigint], "view">;
@@ -346,6 +363,7 @@ export interface Fundraiser extends BaseContract {
     getEvent(key: "FundsClaimed"): TypedContractEvent<FundsClaimedEvent.InputTuple, FundsClaimedEvent.OutputTuple, FundsClaimedEvent.OutputObject>;
     getEvent(key: "Initialized"): TypedContractEvent<InitializedEvent.InputTuple, InitializedEvent.OutputTuple, InitializedEvent.OutputObject>;
     getEvent(key: "LiquidityMintingFailed"): TypedContractEvent<LiquidityMintingFailedEvent.InputTuple, LiquidityMintingFailedEvent.OutputTuple, LiquidityMintingFailedEvent.OutputObject>;
+    getEvent(key: "LiquidityProvided"): TypedContractEvent<LiquidityProvidedEvent.InputTuple, LiquidityProvidedEvent.OutputTuple, LiquidityProvidedEvent.OutputObject>;
     getEvent(key: "OwnershipTransferred"): TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;
     getEvent(key: "SwapPairInitialized"): TypedContractEvent<SwapPairInitializedEvent.InputTuple, SwapPairInitializedEvent.OutputTuple, SwapPairInitializedEvent.OutputObject>;
     filters: {
@@ -363,6 +381,8 @@ export interface Fundraiser extends BaseContract {
         Initialized: TypedContractEvent<InitializedEvent.InputTuple, InitializedEvent.OutputTuple, InitializedEvent.OutputObject>;
         "LiquidityMintingFailed()": TypedContractEvent<LiquidityMintingFailedEvent.InputTuple, LiquidityMintingFailedEvent.OutputTuple, LiquidityMintingFailedEvent.OutputObject>;
         LiquidityMintingFailed: TypedContractEvent<LiquidityMintingFailedEvent.InputTuple, LiquidityMintingFailedEvent.OutputTuple, LiquidityMintingFailedEvent.OutputObject>;
+        "LiquidityProvided(uint256,uint256)": TypedContractEvent<LiquidityProvidedEvent.InputTuple, LiquidityProvidedEvent.OutputTuple, LiquidityProvidedEvent.OutputObject>;
+        LiquidityProvided: TypedContractEvent<LiquidityProvidedEvent.InputTuple, LiquidityProvidedEvent.OutputTuple, LiquidityProvidedEvent.OutputObject>;
         "OwnershipTransferred(address,address)": TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;
         OwnershipTransferred: TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;
         "SwapPairInitialized(uint256,uint256)": TypedContractEvent<SwapPairInitializedEvent.InputTuple, SwapPairInitializedEvent.OutputTuple, SwapPairInitializedEvent.OutputObject>;

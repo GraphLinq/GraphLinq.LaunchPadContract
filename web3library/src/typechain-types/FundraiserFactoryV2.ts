@@ -31,6 +31,8 @@ export interface FundraiserFactoryV2Interface extends Interface {
       | "campaignID"
       | "campaigns"
       | "createFundraiser"
+      | "fundraiserID"
+      | "fundraisers"
       | "initialize"
       | "owner"
       | "proxiableUUID"
@@ -70,6 +72,14 @@ export interface FundraiserFactoryV2Interface extends Interface {
     values: [BytesLike, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "fundraiserID",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "fundraisers",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "initialize",
     values?: undefined
   ): string;
@@ -107,6 +117,14 @@ export interface FundraiserFactoryV2Interface extends Interface {
   decodeFunctionResult(functionFragment: "campaigns", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createFundraiser",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "fundraiserID",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "fundraisers",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
@@ -255,6 +273,10 @@ export interface FundraiserFactoryV2 extends BaseContract {
     "nonpayable"
   >;
 
+  fundraiserID: TypedContractMethod<[], [bigint], "view">;
+
+  fundraisers: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+
   initialize: TypedContractMethod<[], [void], "nonpayable">;
 
   owner: TypedContractMethod<[], [string], "view">;
@@ -308,6 +330,12 @@ export interface FundraiserFactoryV2 extends BaseContract {
     [string],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "fundraiserID"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "fundraisers"
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
   getFunction(
     nameOrSignature: "initialize"
   ): TypedContractMethod<[], [void], "nonpayable">;

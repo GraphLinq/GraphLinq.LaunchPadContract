@@ -80,13 +80,13 @@ export interface FundraiserInterface extends Interface {
       | "finalizedTimestamp"
       | "getRequiredAmountsForLiquidity"
       | "info"
-      | "initSwapPair"
       | "initialize"
       | "owner"
       | "participantsCount"
       | "pool"
       | "poolFee"
       | "positionManager"
+      | "provideLiquidity"
       | "purchasedTokens"
       | "raiseToken"
       | "raisedAmount"
@@ -110,6 +110,7 @@ export interface FundraiserInterface extends Interface {
       | "FundsClaimed"
       | "Initialized"
       | "LiquidityMintingFailed"
+      | "LiquidityProvided"
       | "OwnershipTransferred"
       | "SwapPairInitialized"
   ): EventFragment;
@@ -151,10 +152,6 @@ export interface FundraiserInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "info", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "initSwapPair",
-    values: [BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "initialize",
     values: [Fundraiser.FundraiserParamsStruct]
   ): string;
@@ -168,6 +165,10 @@ export interface FundraiserInterface extends Interface {
   encodeFunctionData(
     functionFragment: "positionManager",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "provideLiquidity",
+    values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "purchasedTokens",
@@ -233,10 +234,6 @@ export interface FundraiserInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "info", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "initSwapPair",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
@@ -247,6 +244,10 @@ export interface FundraiserInterface extends Interface {
   decodeFunctionResult(functionFragment: "poolFee", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "positionManager",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "provideLiquidity",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -362,6 +363,22 @@ export namespace LiquidityMintingFailedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace LiquidityProvidedEvent {
+  export type InputTuple = [
+    raiseTokenAmount: BigNumberish,
+    saleTokenAmount: BigNumberish
+  ];
+  export type OutputTuple = [raiseTokenAmount: bigint, saleTokenAmount: bigint];
+  export interface OutputObject {
+    raiseTokenAmount: bigint;
+    saleTokenAmount: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace OwnershipTransferredEvent {
   export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
   export type OutputTuple = [previousOwner: string, newOwner: string];
@@ -469,12 +486,6 @@ export interface Fundraiser extends BaseContract {
     "view"
   >;
 
-  initSwapPair: TypedContractMethod<
-    [tickLower: BigNumberish, tickUpper: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-
   initialize: TypedContractMethod<
     [params: Fundraiser.FundraiserParamsStruct],
     [void],
@@ -490,6 +501,16 @@ export interface Fundraiser extends BaseContract {
   poolFee: TypedContractMethod<[], [bigint], "view">;
 
   positionManager: TypedContractMethod<[], [string], "view">;
+
+  provideLiquidity: TypedContractMethod<
+    [
+      desiredRaiseTokenLiquidity: BigNumberish,
+      tickLower: BigNumberish,
+      tickUpper: BigNumberish
+    ],
+    [void],
+    "payable"
+  >;
 
   purchasedTokens: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
@@ -574,13 +595,6 @@ export interface Fundraiser extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "initSwapPair"
-  ): TypedContractMethod<
-    [tickLower: BigNumberish, tickUpper: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "initialize"
   ): TypedContractMethod<
     [params: Fundraiser.FundraiserParamsStruct],
@@ -602,6 +616,17 @@ export interface Fundraiser extends BaseContract {
   getFunction(
     nameOrSignature: "positionManager"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "provideLiquidity"
+  ): TypedContractMethod<
+    [
+      desiredRaiseTokenLiquidity: BigNumberish,
+      tickLower: BigNumberish,
+      tickUpper: BigNumberish
+    ],
+    [void],
+    "payable"
+  >;
   getFunction(
     nameOrSignature: "purchasedTokens"
   ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
@@ -687,6 +712,13 @@ export interface Fundraiser extends BaseContract {
     LiquidityMintingFailedEvent.InputTuple,
     LiquidityMintingFailedEvent.OutputTuple,
     LiquidityMintingFailedEvent.OutputObject
+  >;
+  getEvent(
+    key: "LiquidityProvided"
+  ): TypedContractEvent<
+    LiquidityProvidedEvent.InputTuple,
+    LiquidityProvidedEvent.OutputTuple,
+    LiquidityProvidedEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferred"
@@ -779,6 +811,17 @@ export interface Fundraiser extends BaseContract {
       LiquidityMintingFailedEvent.InputTuple,
       LiquidityMintingFailedEvent.OutputTuple,
       LiquidityMintingFailedEvent.OutputObject
+    >;
+
+    "LiquidityProvided(uint256,uint256)": TypedContractEvent<
+      LiquidityProvidedEvent.InputTuple,
+      LiquidityProvidedEvent.OutputTuple,
+      LiquidityProvidedEvent.OutputObject
+    >;
+    LiquidityProvided: TypedContractEvent<
+      LiquidityProvidedEvent.InputTuple,
+      LiquidityProvidedEvent.OutputTuple,
+      LiquidityProvidedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

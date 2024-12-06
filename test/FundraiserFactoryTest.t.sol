@@ -239,10 +239,9 @@ contract FundraiserFactoryTest is Test {
 
         // Initialize the swap pair
         (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
-        saleToken.mint(fundraiserAddress, requiredSaleTokens);
-        raiseToken.mint(fundraiserAddress, 100 * 10**18);
-
-        fundraiser.initSwapPair(-887220, 887220);
+        saleToken.approve(fundraiserAddress, requiredSaleTokens);
+        raiseToken.approve(fundraiserAddress, 100 * 10**18);
+        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
     }
 
     function testClaimTokens() public {
@@ -287,10 +286,9 @@ contract FundraiserFactoryTest is Test {
 
         // Initialize the swap pair
         (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
-        saleToken.mint(fundraiserAddress, requiredSaleTokens);
-        raiseToken.mint(fundraiserAddress, 100 * 10**18);
-
-        fundraiser.initSwapPair(-887220, 887220);
+        saleToken.approve(fundraiserAddress, requiredSaleTokens);
+        raiseToken.approve(fundraiserAddress, 100 * 10**18);
+        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
 
         // Fast forward time to after the vesting start
         vm.warp(block.timestamp + 3600);
@@ -431,10 +429,9 @@ contract FundraiserFactoryTest is Test {
 
         // Initialize the swap pair
         (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
-        saleToken.mint(fundraiserAddress, requiredSaleTokens);
-        raiseToken.mint(fundraiserAddress, 100 * 10**18);
-
-        fundraiser.initSwapPair(-887220, 887220);
+        saleToken.approve(fundraiserAddress, requiredSaleTokens);
+        raiseToken.approve(fundraiserAddress, 100 * 10**18);
+        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
 
         // Fast forward time to after the vesting start
         vm.warp(block.timestamp + 3600);
@@ -488,10 +485,9 @@ contract FundraiserFactoryTest is Test {
 
         // Initialize the swap pair
         (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
-        saleToken.mint(fundraiserAddress, requiredSaleTokens);
-        raiseToken.mint(fundraiserAddress, 100 * 10**18);
-
-        fundraiser.initSwapPair(-887220, 887220);
+        saleToken.approve(fundraiserAddress, requiredSaleTokens);
+        raiseToken.approve(fundraiserAddress, 100 * 10**18);
+        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
 
         // Claim tokens
         fundraiser.claimTokens();
@@ -517,7 +513,7 @@ contract FundraiserFactoryTest is Test {
         _testInitSwapPairAndCheckPrice(
             raiseToken, 
             saleToken, 
-            100 * 10**18 // pricePerToken
+            1 * 10**18 // pricePerToken
         );
     }
 
@@ -551,12 +547,13 @@ contract FundraiserFactoryTest is Test {
         // Finalize the fundraiser
         fundraiser.finalize();
 
-        // Mint tokens to the fundraiser
-        sale.mint(fundraiserAddress, 10000 * 10**18);
-        raise.mint(fundraiserAddress, 1000 * 10**18);
-
         // Initialize the swap pair
-        fundraiser.initSwapPair(-887220, 887220);
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(1000 * 10**18);
+        sale.mint(address(this), 100000 * 10**18);
+        raise.mint(address(this), 100000 * 10**18);
+        sale.approve(fundraiserAddress, requiredSaleTokens);
+        raise.approve(fundraiserAddress, 1000 * 10**18);
+        fundraiser.provideLiquidity(1000 * 10**18, -887220, 887220);
 
         // Swap tokens to check the price
         uint256 amountIn = 1 * 10**18; // Amount to swap

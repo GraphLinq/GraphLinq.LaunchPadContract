@@ -22,6 +22,9 @@ contract FundraiserFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeab
 
     mapping(uint8 => ICampaignFactory) public campaigns;
 
+    mapping(uint256 => address) public fundraisers;
+    uint256 public fundraiserID;
+
     /**
      * @dev Struct to hold parameters for the Fundraiser initialization
      */

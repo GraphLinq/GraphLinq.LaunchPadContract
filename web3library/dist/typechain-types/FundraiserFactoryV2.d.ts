@@ -1,13 +1,15 @@
 import type { BaseContract, BigNumberish, BytesLike, FunctionFragment, Result, Interface, EventFragment, AddressLike, ContractRunner, ContractMethod, Listener } from "ethers";
 import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, TypedLogDescription, TypedListener, TypedContractMethod } from "./common";
 export interface FundraiserFactoryV2Interface extends Interface {
-    getFunction(nameOrSignature: "POSITION_MANAGER" | "UPGRADE_INTERFACE_VERSION" | "campaignID" | "campaigns" | "createFundraiser" | "initialize" | "owner" | "proxiableUUID" | "registerCampaign" | "renounceOwnership" | "transferOwnership" | "upgradeToAndCall"): FunctionFragment;
+    getFunction(nameOrSignature: "POSITION_MANAGER" | "UPGRADE_INTERFACE_VERSION" | "campaignID" | "campaigns" | "createFundraiser" | "fundraiserID" | "fundraisers" | "initialize" | "owner" | "proxiableUUID" | "registerCampaign" | "renounceOwnership" | "transferOwnership" | "upgradeToAndCall"): FunctionFragment;
     getEvent(nameOrSignatureOrTopic: "CampaignRegistered" | "FundraiserCreated" | "Initialized" | "OwnershipTransferred" | "Upgraded"): EventFragment;
     encodeFunctionData(functionFragment: "POSITION_MANAGER", values?: undefined): string;
     encodeFunctionData(functionFragment: "UPGRADE_INTERFACE_VERSION", values?: undefined): string;
     encodeFunctionData(functionFragment: "campaignID", values?: undefined): string;
     encodeFunctionData(functionFragment: "campaigns", values: [BigNumberish]): string;
     encodeFunctionData(functionFragment: "createFundraiser", values: [BytesLike, BytesLike, BigNumberish]): string;
+    encodeFunctionData(functionFragment: "fundraiserID", values?: undefined): string;
+    encodeFunctionData(functionFragment: "fundraisers", values: [BigNumberish]): string;
     encodeFunctionData(functionFragment: "initialize", values?: undefined): string;
     encodeFunctionData(functionFragment: "owner", values?: undefined): string;
     encodeFunctionData(functionFragment: "proxiableUUID", values?: undefined): string;
@@ -20,6 +22,8 @@ export interface FundraiserFactoryV2Interface extends Interface {
     decodeFunctionResult(functionFragment: "campaignID", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "campaigns", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "createFundraiser", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "fundraiserID", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "fundraisers", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "proxiableUUID", data: BytesLike): Result;
@@ -108,6 +112,8 @@ export interface FundraiserFactoryV2 extends BaseContract {
     ], [
         string
     ], "nonpayable">;
+    fundraiserID: TypedContractMethod<[], [bigint], "view">;
+    fundraisers: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
     initialize: TypedContractMethod<[], [void], "nonpayable">;
     owner: TypedContractMethod<[], [string], "view">;
     proxiableUUID: TypedContractMethod<[], [string], "view">;
@@ -140,6 +146,8 @@ export interface FundraiserFactoryV2 extends BaseContract {
     ], [
         string
     ], "nonpayable">;
+    getFunction(nameOrSignature: "fundraiserID"): TypedContractMethod<[], [bigint], "view">;
+    getFunction(nameOrSignature: "fundraisers"): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
     getFunction(nameOrSignature: "initialize"): TypedContractMethod<[], [void], "nonpayable">;
     getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
     getFunction(nameOrSignature: "proxiableUUID"): TypedContractMethod<[], [string], "view">;

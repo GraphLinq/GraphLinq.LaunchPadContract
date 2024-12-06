@@ -60,7 +60,7 @@ export declare class FundraiserWeb3Connect {
     finalizeFundraiser(signer: Signer, fundraiserAddr: string): Promise<ContractTransactionResponse>;
     cancelFundraiser(signer: Signer, fundraiserAddr: string): Promise<ContractTransactionResponse>;
     getSaleTokenLiquidityInfo(fundraiserAddr: string, initialRaiseTokenLiquidity: BigNumberish): Promise<bigint>;
-    initSwapPair(signer: Signer, fundraiserAddr: string, tickLower: number, tickUpper: number): Promise<ContractTransactionResponse>;
+    initSwapPair(signer: Signer, fundraiserAddr: string, tickLower: number, tickUpper: number, desiredRaiseTokenLiquidity: BigNumberish): Promise<ContractTransactionResponse>;
     getFundraiserState(fundraiserAddr: string): Promise<{
         vestingStartDelta: bigint;
         vestingDuration: bigint;

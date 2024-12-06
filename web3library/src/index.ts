@@ -421,11 +421,12 @@ export class FundraiserWeb3Connect {
      * @param fundraiserAddr - Address of the fundraiser contract.
      * @param tickLower - Lower tick range for the pool.
      * @param tickUpper - Upper tick range for the pool.
+     * @param desiredRaiseTokenLiquidity - Desired raise token liquidity.
      */
-    public async initSwapPair(signer: Signer, fundraiserAddr: string, tickLower: number, tickUpper: number) {
+    public async initSwapPair(signer: Signer, fundraiserAddr: string, tickLower: number, tickUpper: number, desiredRaiseTokenLiquidity: BigNumberish) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-            const tx = await fundraiser.initSwapPair(tickLower, tickUpper);
+            const tx = await fundraiser.provideLiquidity(desiredRaiseTokenLiquidity, tickLower, tickUpper);
             return await this.addTx(tx);
         });
     }
