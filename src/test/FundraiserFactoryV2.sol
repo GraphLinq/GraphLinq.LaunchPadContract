@@ -26,23 +26,6 @@ contract FundraiserFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeab
     uint256 public fundraiserID;
 
     /**
-     * @dev Struct to hold parameters for the Fundraiser initialization
-     */
-    struct FundraiserParams {
-        address saleToken;
-        address raiseToken;
-        string projectName;
-        string description;
-        string websiteLink;
-        ICampaign campaign;
-        uint256 vestingStartDelta;
-        uint256 vestingDuration;
-        address positionManager;
-        IVesting vesting;
-        uint24 poolFee;
-    }
-
-    /**
      * @dev Initializes the factory contract
      * Sets the initial owner
     */
@@ -78,17 +61,6 @@ contract FundraiserFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeab
         bytes memory campaignParams,
         uint8 campaignTypeID
     ) public returns (address) {
-        (
-            string memory projectName,
-            string memory description,
-            string memory websiteLink,
-            address saleToken,
-            address raiseToken,
-            uint256 vestingStartDelta,
-            uint256 vestingDuration,
-            uint24 poolFee
-        ) = abi.decode(fundraiserParams, (string, string, string, address, address, uint256, uint256, uint24));
-
         require(campaignTypeID < campaignID, "Invalid campaign type");
 
         // Create a new Fundraiser instance
@@ -97,17 +69,30 @@ contract FundraiserFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeab
         // Create a new campaign using the specified campaign factory
         ICampaign campaign = campaigns[campaignTypeID].createCampaign(address(fundraiser), campaignParams);
 
+        (
+            string memory projectName,
+            string memory description,
+            string memory websiteLink,
+            string memory logoUrl,
+            address saleToken,
+            address raiseToken,
+            uint256 vestingStartDelta,
+            uint256 vestingDuration,
+            uint24 poolFee
+        ) = abi.decode(fundraiserParams, (string, string, string, string, address, address, uint256, uint256, uint24));
+
         // Initialize the vesting contract if vesting is enabled
         IVesting vesting = IVesting(address(0));
         if (vestingDuration > 0) {
             vesting = IVesting(new Vesting(saleToken, address(fundraiser)));
         }
 
-        // Initialize the parameters struct
-        Fundraiser.FundraiserParams memory params = Fundraiser.FundraiserParams({
+        //Initialize the fundraiser
+        fundraiser.initialize(Fundraiser.FundraiserParams({
             saleToken: saleToken,
             raiseToken: raiseToken,
             projectName: projectName,
+            logoUrl: logoUrl,
             description: description,
             websiteLink: websiteLink,
             campaign: campaign,
@@ -116,10 +101,7 @@ contract FundraiserFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeab
             positionManager: POSITION_MANAGER,
             vesting: vesting,
             poolFee: poolFee
-        });
-
-        // Initialize the fundraiser
-        fundraiser.initialize(params);
+        }));
 
         emit FundraiserCreated(address(fundraiser));
         return address(fundraiser);

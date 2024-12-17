@@ -28,6 +28,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         string projectName;
         string description;
         string websiteLink;
+        string logoUrl;
     }
 
     struct FundraiserParams {
@@ -36,6 +37,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         string projectName;
         string description;
         string websiteLink;
+        string logoUrl;
         ICampaign campaign;
         uint256 vestingStartDelta;
         uint256 vestingDuration;
@@ -107,7 +109,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
 
         saleToken = IERC20(params.saleToken);
         raiseToken = IERC20(params.raiseToken);
-        info = ProjectInformation(params.projectName, params.description, params.websiteLink);
+        info = ProjectInformation(params.projectName, params.description, params.websiteLink, params.logoUrl);
         campaign = params.campaign;
         positionManager = INonfungiblePositionManager(params.positionManager);
 

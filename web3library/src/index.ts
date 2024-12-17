@@ -14,9 +14,12 @@ import {
     INonfungiblePositionManager,
 } from "./typechain-types";
 
+// import { ContributionEvent, FinalizedEvent, ClaimedEvent, FundsClaimedEvent, FailedEvent, SwapPairInitializedEvent} from "./typechain-types/Fundraiser.sol/Fundraiser";
+
 import { FundraiserError, UnknownError, mapRevertReasonToError } from './errors';
 
-export { FundraiserFactory__factory, Fundraiser__factory, MockERC20__factory } from "./typechain-types";
+export { FundraiserFactory__factory, Fundraiser__factory } from "./typechain-types";
+import { MockERC20__factory } from "./typechain-types/factories/MockERC20__factory";
 
 export class FundraiserWeb3Connect {
     provider: Provider;
@@ -104,6 +107,7 @@ export class FundraiserWeb3Connect {
             projectName: string;
             description: string;
             websiteLink: string;
+            logoUrl: string;
             saleToken: string;
             raiseToken: string;
             vestingStartDelta: number;
@@ -118,11 +122,12 @@ export class FundraiserWeb3Connect {
         return this.safeExecute(async () => {
             const tx = await this.fundraiserFactory.connect(signer).createFundraiser(
                 ethers.AbiCoder.defaultAbiCoder().encode(
-                    ["string", "string", "string", "address", "address", "uint256", "uint256", "uint24"],
+                    ["string", "string", "string", "string", "address", "address", "uint256", "uint256", "uint24"],
                     [
                         params.projectName,
                         params.description,
                         params.websiteLink,
+                        params.logoUrl,
                         params.saleToken,
                         params.raiseToken,
                         params.vestingStartDelta,
@@ -149,6 +154,7 @@ export class FundraiserWeb3Connect {
             projectName: string;
             description: string;
             websiteLink: string;
+            logoUrl: string;
             saleToken: string;
             raiseToken: string;
             vestingStartDelta: number;
@@ -164,11 +170,12 @@ export class FundraiserWeb3Connect {
         return this.safeExecute(async () => {
             const tx = await this.fundraiserFactory.connect(signer).createFundraiser(
                 ethers.AbiCoder.defaultAbiCoder().encode(
-                    ["string", "string", "string", "address", "address", "uint256", "uint256", "uint24"],
+                    ["string", "string", "string", "string", "address", "address", "uint256", "uint256", "uint24"],
                     [
                         params.projectName,
                         params.description,
                         params.websiteLink,
+                        params.logoUrl,
                         params.saleToken,
                         params.raiseToken,
                         params.vestingStartDelta,
@@ -326,6 +333,19 @@ export class FundraiserWeb3Connect {
     }
 
     /**
+     * Check if user claimed already
+     * @param signer - The signer instance for transaction signing.
+     * @param fundraiserAddr - Address of the fundraiser contract.
+     */
+    public async checkClaimed(signer: Signer, fundraiserAddr: string) {
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const userAddr = await signer.getAddress();
+            return await fundraiser.claimed(userAddr);
+        });
+    }
+
+    /**
      * Claims funds from a failed fundraiser.
      * @param signer - The signer instance for transaction signing.
      * @param fundraiserAddr - Address of the fundraiser contract.
@@ -426,8 +446,16 @@ export class FundraiserWeb3Connect {
     public async initSwapPair(signer: Signer, fundraiserAddr: string, tickLower: number, tickUpper: number, desiredRaiseTokenLiquidity: BigNumberish) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-            const tx = await fundraiser.provideLiquidity(desiredRaiseTokenLiquidity, tickLower, tickUpper);
-            return await this.addTx(tx);
+            const raiseToken = await fundraiser.raiseToken();
+            const weth = await fundraiser.WETH();
+            if(raiseToken === weth) {
+                const tx = await fundraiser.provideLiquidity(desiredRaiseTokenLiquidity, tickLower, tickUpper, {value: desiredRaiseTokenLiquidity});
+                return await this.addTx(tx);
+            } else {
+                const tx = await fundraiser.provideLiquidity(desiredRaiseTokenLiquidity, tickLower, tickUpper);
+                return await this.addTx(tx);
+            }
+            
         });
     }
 
@@ -578,4 +606,24 @@ export class FundraiserWeb3Connect {
         );
         this.pending = pendingTransactions.filter((tx): tx is TransactionResponse => tx !== null);
     }
+
+    /**
+     * Deploys an erc 20 for testing
+     * @param signer 
+     * @param name 
+     * @param symbol 
+     * @param totalSupply 
+     * @returns 
+     */
+    public async deployERC20(signer: Signer, name: string, symbol: string, totalSupply: BigNumberish) {
+        return this.safeExecute(async () => {
+            const address = await signer.getAddress();
+            const tokenFactory = new MockERC20__factory();
+            const tx = await tokenFactory.connect(signer).deploy(name, symbol);
+            const token = await tx.waitForDeployment();
+            await token.connect(signer).mint(address, totalSupply);
+            return await token.getAddress();
+        });
+    }
+
 }

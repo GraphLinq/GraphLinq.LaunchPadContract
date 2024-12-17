@@ -62,6 +62,7 @@ contract FundraiserFactoryTest is Test {
             "Stealth Project",
             "This is a stealth launch project.",
             "https://stealthproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -79,10 +80,11 @@ contract FundraiserFactoryTest is Test {
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
-        (string memory projectName, string memory description, string memory websiteLink) = fundraiser.info();
+        (string memory projectName, string memory description, string memory websiteLink, string memory logoUrl) = fundraiser.info();
         assertEq(projectName, "Stealth Project");
         assertEq(description, "This is a stealth launch project.");
         assertEq(websiteLink, "https://stealthproject.com");
+        assertEq(logoUrl, "https://logourl");
     }
 
     function testCreateFairLaunchFundraiser() public {
@@ -91,6 +93,7 @@ contract FundraiserFactoryTest is Test {
             "Fair Project",
             "This is a fair launch project.",
             "https://fairproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -109,10 +112,11 @@ contract FundraiserFactoryTest is Test {
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
-        (string memory projectName, string memory description, string memory websiteLink) = fundraiser.info();
+        (string memory projectName, string memory description, string memory websiteLink, string memory logoUrl) = fundraiser.info();
         assertEq(projectName, "Fair Project");
         assertEq(description, "This is a fair launch project.");
         assertEq(websiteLink, "https://fairproject.com");
+        assertEq(logoUrl, "https://logourl");
     }
 
     function testContributeToFundraiser() public {
@@ -121,6 +125,7 @@ contract FundraiserFactoryTest is Test {
             "Test Project",
             "This is a test project.",
             "https://testproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -159,6 +164,7 @@ contract FundraiserFactoryTest is Test {
             "Test Project",
             "This is a test project.",
             "https://testproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -203,6 +209,7 @@ contract FundraiserFactoryTest is Test {
             "Test Project",
             "This is a test project.",
             "https://testproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -250,6 +257,7 @@ contract FundraiserFactoryTest is Test {
             "Test Project",
             "This is a test project.",
             "https://testproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -306,6 +314,7 @@ contract FundraiserFactoryTest is Test {
             "Failed Project",
             "This is a failed project.",
             "https://failedproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -355,6 +364,7 @@ contract FundraiserFactoryTest is Test {
             "Multiple Contributions Test",
             "Testing multiple contributions",
             "https://example.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,
@@ -393,6 +403,7 @@ contract FundraiserFactoryTest is Test {
             "Claim Tokens with Vesting Test",
             "Testing claiming tokens with vesting",
             "https://example.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,
@@ -449,6 +460,7 @@ contract FundraiserFactoryTest is Test {
             "Claim Tokens without Vesting Test",
             "Testing claiming tokens without vesting",
             "https://example.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             0,  // No vesting
@@ -527,6 +539,7 @@ contract FundraiserFactoryTest is Test {
             "Test Project",
             "This is a test project.",
             "https://testproject.com",
+            "https://logourl",
             address(sale), //sale
             address(raise), //rase
             3600,  // Vesting starts 1 hour after finalization

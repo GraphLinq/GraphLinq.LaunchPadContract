@@ -1,7 +1,7 @@
 import { BigNumberish, ContractTransactionResponse, Provider, TransactionResponse } from "ethers";
 import { Signer } from "ethers";
 import { FundraiserFactory } from "./typechain-types";
-export { FundraiserFactory__factory, Fundraiser__factory, MockERC20__factory } from "./typechain-types";
+export { FundraiserFactory__factory, Fundraiser__factory } from "./typechain-types";
 export declare class FundraiserWeb3Connect {
     provider: Provider;
     fundraiserFactory: FundraiserFactory;
@@ -17,6 +17,7 @@ export declare class FundraiserWeb3Connect {
         projectName: string;
         description: string;
         websiteLink: string;
+        logoUrl: string;
         saleToken: string;
         raiseToken: string;
         vestingStartDelta: number;
@@ -30,6 +31,7 @@ export declare class FundraiserWeb3Connect {
         projectName: string;
         description: string;
         websiteLink: string;
+        logoUrl: string;
         saleToken: string;
         raiseToken: string;
         vestingStartDelta: number;
@@ -46,6 +48,7 @@ export declare class FundraiserWeb3Connect {
     contribute(signer: Signer, fundraiserAddr: string, amount: BigNumberish): Promise<ContractTransactionResponse>;
     getContribution(signer: Signer, fundraiserAddr: string): Promise<bigint>;
     claimTokens(signer: Signer, fundraiserAddr: string): Promise<ContractTransactionResponse>;
+    checkClaimed(signer: Signer, fundraiserAddr: string): Promise<boolean>;
     claimFunds(signer: Signer, fundraiserAddr: string): Promise<ContractTransactionResponse>;
     getVestingInfo(signer: Signer, fundraiserAddr: string): Promise<{
         releasableAmount: bigint;
@@ -96,4 +99,5 @@ export declare class FundraiserWeb3Connect {
     private addTx;
     updatePendingTransactions(): Promise<void>;
     purgeMinedTransactions(): Promise<void>;
+    deployERC20(signer: Signer, name: string, symbol: string, totalSupply: BigNumberish): Promise<string>;
 }

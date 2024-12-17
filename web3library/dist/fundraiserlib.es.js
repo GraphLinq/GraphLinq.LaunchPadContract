@@ -2237,10 +2237,11 @@ class FundraiserWeb3Connect {
     }
     async createFundraiserStealthLaunch(signer, params, campaignParams) {
         return this.safeExecute(async () => {
-            const tx = await this.fundraiserFactory.connect(signer).createFundraiser(ethers.AbiCoder.defaultAbiCoder().encode(["string", "string", "string", "address", "address", "uint256", "uint256", "uint24"], [
+            const tx = await this.fundraiserFactory.connect(signer).createFundraiser(ethers.AbiCoder.defaultAbiCoder().encode(["string", "string", "string", "string", "address", "address", "uint256", "uint256", "uint24"], [
                 params.projectName,
                 params.description,
                 params.websiteLink,
+                params.logoUrl,
                 params.saleToken,
                 params.raiseToken,
                 params.vestingStartDelta,
@@ -2252,10 +2253,11 @@ class FundraiserWeb3Connect {
     }
     async createFundraiserFairLaunch(signer, params, campaignParams) {
         return this.safeExecute(async () => {
-            const tx = await this.fundraiserFactory.connect(signer).createFundraiser(ethers.AbiCoder.defaultAbiCoder().encode(["string", "string", "string", "address", "address", "uint256", "uint256", "uint24"], [
+            const tx = await this.fundraiserFactory.connect(signer).createFundraiser(ethers.AbiCoder.defaultAbiCoder().encode(["string", "string", "string", "string", "address", "address", "uint256", "uint256", "uint24"], [
                 params.projectName,
                 params.description,
                 params.websiteLink,
+                params.logoUrl,
                 params.saleToken,
                 params.raiseToken,
                 params.vestingStartDelta,
@@ -2322,6 +2324,13 @@ class FundraiserWeb3Connect {
             return await this.addTx(tx);
         });
     }
+    async checkClaimed(signer, fundraiserAddr) {
+        return this.safeExecute(async () => {
+            const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
+            const userAddr = await signer.getAddress();
+            return await fundraiser.claimed(userAddr);
+        });
+    }
     async claimFunds(signer, fundraiserAddr) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
@@ -2375,8 +2384,16 @@ class FundraiserWeb3Connect {
     async initSwapPair(signer, fundraiserAddr, tickLower, tickUpper, desiredRaiseTokenLiquidity) {
         return this.safeExecute(async () => {
             const fundraiser = Fundraiser__factory.connect(fundraiserAddr, signer);
-            const tx = await fundraiser.provideLiquidity(desiredRaiseTokenLiquidity, tickLower, tickUpper);
-            return await this.addTx(tx);
+            const raiseToken = await fundraiser.raiseToken();
+            const weth = await fundraiser.WETH();
+            if (raiseToken === weth) {
+                const tx = await fundraiser.provideLiquidity(desiredRaiseTokenLiquidity, tickLower, tickUpper, { value: desiredRaiseTokenLiquidity });
+                return await this.addTx(tx);
+            }
+            else {
+                const tx = await fundraiser.provideLiquidity(desiredRaiseTokenLiquidity, tickLower, tickUpper);
+                return await this.addTx(tx);
+            }
         });
     }
     async getFundraiserState(fundraiserAddr) {
@@ -2491,7 +2508,17 @@ class FundraiserWeb3Connect {
         }));
         this.pending = pendingTransactions.filter((tx) => tx !== null);
     }
+    async deployERC20(signer, name, symbol, totalSupply) {
+        return this.safeExecute(async () => {
+            const address = await signer.getAddress();
+            const tokenFactory = new MockERC20__factory();
+            const tx = await tokenFactory.connect(signer).deploy(name, symbol);
+            const token = await tx.waitForDeployment();
+            await token.connect(signer).mint(address, totalSupply);
+            return await token.getAddress();
+        });
+    }
 }
 
-export { FundraiserFactory__factory, FundraiserWeb3Connect, Fundraiser__factory, MockERC20__factory };
+export { FundraiserFactory__factory, FundraiserWeb3Connect, Fundraiser__factory };
 //# sourceMappingURL=fundraiserlib.es.js.map

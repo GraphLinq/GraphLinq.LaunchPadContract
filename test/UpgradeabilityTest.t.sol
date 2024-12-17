@@ -63,6 +63,7 @@ contract UpgradeabilityTest is Test {
             "Test Project",
             "This is a test project.",
             "https://testproject.com",
+            "https://logourl",
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
@@ -81,10 +82,11 @@ contract UpgradeabilityTest is Test {
 
         // Assertions
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
-        (string memory projectName, string memory description, string memory websiteLink) = fundraiser.info();
+        (string memory projectName, string memory description, string memory websiteLink, string memory logoUrl) = fundraiser.info();
         assertEq(projectName, "Test Project");
         assertEq(description, "This is a test project.");
         assertEq(websiteLink, "https://testproject.com");
+        assertEq(logoUrl, "https://logourl");
     }
 
     // Test the upgradeability of the FundraiserFactory contract
