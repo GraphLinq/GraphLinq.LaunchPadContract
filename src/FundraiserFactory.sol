@@ -17,7 +17,7 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     // State variables
     uint8 public campaignID;
-    address constant public POSITION_MANAGER = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
+    address constant public POSITION_MANAGER = 0x9527542236724B2D1e54F97FC62375a72Bc950cE;
 
     mapping(uint8 => ICampaignFactory) public campaigns;
 
