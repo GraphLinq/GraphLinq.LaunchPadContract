@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IVesting.sol";
 import "./interfaces/INonfungiblePositionManager.sol";
 import "./interfaces/ICampaign.sol";
+import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 /// @title Interface for WETH9
 interface IWETH9 is IERC20 {
@@ -44,6 +45,8 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         address positionManager;
         IVesting vesting;
         uint24 poolFee;
+        uint8 poolLiquidity; //% of liquidity to be used for the pool
+        uint256 liquidityLockDuration;
     }
 
     // Public state variables
@@ -70,9 +73,12 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     mapping(address => bool) public claimed; // To track if a participant has claimed their tokens
 
     // Enum to track the state of the contract
-    enum FundraiserState { Active, Finalized, Failed, SwapPairCreated }
+    enum FundraiserState { Active, Finalized, Failed }
     FundraiserState public state;
     uint24 public poolFee;
+    uint8 public poolLiquidity;
+    uint256 public liquidityLockDuration;
+    uint256 public liquidityTokenId;
 
     // Events
     event Contribution(address indexed contributor, uint256 amount);
@@ -81,8 +87,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
     event FundsClaimed(address indexed claimer, uint256 amount);
     event Failed();
     event SwapPairInitialized(uint256 tokenId, uint256 liquidity);
-    event LiquidityMintingFailed();
-    event LiquidityProvided(uint256 raiseTokenAmount, uint256 saleTokenAmount);
+    event LiquidityClaimed();
 
     /**
      * @dev Constructor to initialize the fundraiser contract
@@ -106,6 +111,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         require(params.vestingDuration == 0 || params.vesting != IVesting(address(0)),
         "Vesting address cannot be zero if vesting is enabled");
         require(params.poolFee == 10000 || params.poolFee == 3000 || params.poolFee == 500, "Invalid pool fee");
+        require(params.poolLiquidity <= 100, "Invalid liquidity percentage");
 
         saleToken = IERC20(params.saleToken);
         raiseToken = IERC20(params.raiseToken);
@@ -118,6 +124,8 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         vesting = IVesting(params.vesting);
         state = FundraiserState.Active;
         poolFee = params.poolFee;
+        poolLiquidity = params.poolLiquidity;
+        liquidityLockDuration = params.liquidityLockDuration;
 
         createdTimestamp = block.timestamp;
 
@@ -196,10 +204,18 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         state = FundraiserState.Finalized;
         campaign.handleFinalization(); // Check if the campaign is successful
         uint256 saleTokenBalance = saleToken.balanceOf(address(this));
-        // procure the sale tokens from the owner
-        if(saleTokenBalance < soldAmount) {
-            require(saleToken.allowance(owner(), address(this)) >= soldAmount - saleTokenBalance, "Insufficient sale token allowance");
-            saleToken.safeTransferFrom(owner(), address(this), soldAmount - saleTokenBalance);
+        if(poolLiquidity > 0) {
+            // compute required raise token liquidity
+            uint256 desiredRaiseTokenLiquidity = (poolLiquidity * raisedAmount) / 100;
+            // compute required sale token liquidity
+            (uint256 requiredSaleTokenLiquidity, ) = getRequiredAmountsForLiquidity(desiredRaiseTokenLiquidity);
+            // procure the sale tokens from the owner for liquidity and for contributors
+            if(saleTokenBalance < soldAmount + requiredSaleTokenLiquidity) {
+                require(saleToken.allowance(owner(), address(this)) >= soldAmount - saleTokenBalance + requiredSaleTokenLiquidity, "Insufficient sale token allowance");
+                saleToken.safeTransferFrom(owner(), address(this), soldAmount - saleTokenBalance + requiredSaleTokenLiquidity);
+            }
+
+            _initSwapPair(-887220, 887220, desiredRaiseTokenLiquidity, requiredSaleTokenLiquidity); // use wide range liquidity
         }
 
         // Transfer raised tokens to the owner
@@ -209,19 +225,18 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
             WETH.withdraw(wGLQBalance);
             payable(owner()).transfer(wGLQBalance);
         } else {
-            raiseToken.safeTransfer(owner(), raisedAmount);
-        }
-
-
-        // If vesting is enabled, transfer sold tokens to the vesting contract
-        if (vestingDuration > 0) {
-            saleToken.safeTransfer(address(vesting), soldAmount);
+            raiseToken.safeTransfer(owner(), raiseToken.balanceOf(address(this)));
         }
 
         // Transfer remaining sale tokens to the owner
         saleTokenBalance = saleToken.balanceOf(address(this));
         if (saleTokenBalance > soldAmount) {
             saleToken.safeTransfer(owner(), saleTokenBalance - soldAmount);
+        }
+
+        // If vesting is enabled, transfer sold tokens to the vesting contract
+        if (vestingDuration > 0) {
+            saleToken.safeTransfer(address(vesting), soldAmount);
         }
 
         finalizedTimestamp = block.timestamp;
@@ -240,7 +255,9 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         // Send back the sale tokens to the owner
         uint256 saleTokenBalance = saleToken.balanceOf(address(this));
         emit Failed();
-        saleToken.safeTransfer(owner(), saleTokenBalance);
+        if(saleTokenBalance > 0) {
+            saleToken.safeTransfer(owner(), saleTokenBalance);
+        }
     }
 
     /**
@@ -270,7 +287,7 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
      * @dev Claim the tokens after the fundraising is finalized
     */
     function claimTokens() public nonReentrant() {
-        require(state == FundraiserState.SwapPairCreated, "Swap pair not created");
+        require(state == FundraiserState.Finalized, "Swap pair not created");
         require(!claimed[msg.sender], "Tokens already claimed");
         claimed[msg.sender] = true;
         
@@ -286,6 +303,17 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         }
         
         emit Claimed(msg.sender, tokenAmount);
+    }
+
+    /**
+     * @dev Claim the liquidity token after locking duration is passed
+    */
+    function claimLiquidityToken() public onlyOwner {
+        require(state == FundraiserState.Finalized, "Fundraising not finalized");
+        require(liquidityTokenId != 0, "Liquidity token not minted");
+        require(block.timestamp >= finalizedTimestamp + liquidityLockDuration, "Liquidity lock duration not passed");
+        IERC721(address(positionManager)).transferFrom(address(this), owner(), liquidityTokenId);
+        emit LiquidityClaimed();
     }
 
     /**
@@ -320,55 +348,15 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
             token1Amount_ = tokenAAmount;
         }
     }
-    
-    /**
-    * @dev Helper function to provide liquidity for pool creation to the fundraiser
-    * @param desiredRaiseTokenLiquidity The amount of raise tokens to be used for liquidity
-    */
-    function provideLiquidity(uint256 desiredRaiseTokenLiquidity, int24 tickLower, int24 tickUpper) public payable onlyOwner nonReentrant() {
-        require(state == FundraiserState.Finalized, "Fundraising not finalized");
-        require(desiredRaiseTokenLiquidity > 0, "Liquidity must be greater than zero");
-
-        if(raiseToken == WETH) {
-            require(msg.value == desiredRaiseTokenLiquidity, "GLQ amount must match desired liquidity");
-            WETH.deposit{value: desiredRaiseTokenLiquidity}();
-        } else {
-            //check allowance
-            require(raiseToken.allowance(owner(), address(this)) >= desiredRaiseTokenLiquidity, "Insufficient raise token allowance");
-            raiseToken.safeTransferFrom(owner(), address(this), desiredRaiseTokenLiquidity);
-        }
-        (uint256 requiredSaleTokenLiquidity, ) = getRequiredAmountsForLiquidity(desiredRaiseTokenLiquidity);
-        // check allowance
-        require(requiredSaleTokenLiquidity <= saleToken.allowance(owner(), address(this)), "Insufficient sale token allowance");
-        saleToken.safeTransferFrom(owner(), address(this), requiredSaleTokenLiquidity);
-
-        emit LiquidityProvided(desiredRaiseTokenLiquidity, requiredSaleTokenLiquidity);
-
-        _initSwapPair(tickLower, tickUpper);
-    }
 
     /**
     * @dev Initialize the swap pair after the fundraising is finalized
     * @param tickLower The lower tick of the pool
     * @param tickUpper The upper tick of the pool
+    * @param raiseTokenLiquidity The amount of raise tokens to be used for liquidity
+    * @param saleTokenLiquidity The amount of sale tokens to be used for liquidity
     */
-    function _initSwapPair(int24 tickLower, int24 tickUpper) private {
-        require(state == FundraiserState.Finalized, "Fundraising not finalized");
-        state = FundraiserState.SwapPairCreated;
-
-        uint256 saleTokenBalance = saleToken.balanceOf(address(this));
-        uint256 raiseTokenBalance = raiseToken.balanceOf(address(this));
-        uint256 availableSaleTokens = saleTokenBalance;
-
-        // In case vesting is not enabled the sale tokens are still in the contract
-        if (vestingDuration == 0) {
-            require(saleTokenBalance > soldAmount, "Not enough sale tokens to create the swap pair");
-            availableSaleTokens = saleTokenBalance - soldAmount;
-        }
-
-        (uint256 requiredSaleTokens, uint256 requiredRaiseTokens) = getRequiredAmountsForLiquidity(raiseTokenBalance);
-        require(requiredSaleTokens <= availableSaleTokens, "Not enough sale tokens to create the swap pair");
-        require(requiredRaiseTokens <= raiseTokenBalance, "Not enough raise tokens to create the swap pair");
+    function _initSwapPair(int24 tickLower, int24 tickUpper, uint256 raiseTokenLiquidity, uint256 saleTokenLiquidity) private {
         // Get the token order and use the token0 and 1 format after that
         (address token0,
         address token1,
@@ -376,12 +364,18 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
         uint256 token1Amount) = _getTokenOrder(
             address(saleToken),
             address(raiseToken),
-            requiredSaleTokens,
-            requiredRaiseTokens);
+            saleTokenLiquidity,
+            raiseTokenLiquidity);
 
         // Approve the position manager to manage tokens
         IERC20(token0).safeIncreaseAllowance(address(positionManager), token0Amount);
         IERC20(token1).safeIncreaseAllowance(address(positionManager), token1Amount);
+
+        // if liquidity is to be locked, store it in this contract
+        address tokenDestination = owner();
+        if (liquidityLockDuration > 0) {
+            tokenDestination = address(this);
+        }
 
         // add liquidity
         INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
@@ -394,16 +388,12 @@ contract Fundraiser is Ownable, Initializable, ReentrancyGuard {
             amount1Desired: token1Amount,
             amount0Min: 0,
             amount1Min: 0,
-            recipient: owner(),
+            recipient: tokenDestination,
             deadline: block.timestamp
         });
 
-        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(params);
-        // reimburse unutilized tokens
-        if(amount0 < token0Amount)
-            IERC20(token0).safeTransfer(owner(), token0Amount - amount0);
-        if(amount1 < token1Amount)
-            IERC20(token1).safeTransfer(owner(), token1Amount - amount1);
+        (uint256 tokenId, uint128 liquidity,,) = positionManager.mint(params);
+        liquidityTokenId = tokenId; // Store the liquidity token ID
 
         emit SwapPairInitialized(tokenId, liquidity);
     }

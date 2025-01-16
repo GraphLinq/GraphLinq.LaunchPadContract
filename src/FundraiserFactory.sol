@@ -9,7 +9,6 @@ import "./Vesting.sol";
 
 import "./interfaces/ICampaignFactory.sol";
 import "./interfaces/ICampaign.sol";
-
 contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // Events
     event FundraiserCreated(address indexed fundraiser, address indexed owner, uint256 id);
@@ -48,6 +47,20 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
         emit CampaignRegistered(campaignID++);
     }
 
+    struct Config {
+        string projectName;
+        string description;
+        string websiteLink;
+        string logoUrl;
+        address saleToken;
+        address raiseToken;
+        uint256 vestingStartDelta;
+        uint256 vestingDuration;
+        uint24 poolFee;
+        uint8 poolLiquidity;
+        uint256 liquidityLockDuration;
+    }
+
     /**
      * @dev Creates a new fundraiser
      * @param fundraiserParams Encoded parameters for the fundraiser
@@ -68,6 +81,43 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
         // Create a new campaign using the specified campaign factory
         ICampaign campaign = campaigns[campaignTypeID].createCampaign(address(fundraiser), campaignParams);
 
+        // Pack the parameters into a struct
+        Config memory config = _decodeFundraiserParams(fundraiserParams);
+
+        // Initialize the vesting contract if vesting is enabled
+        IVesting vesting = IVesting(address(0));
+        if (config.vestingDuration > 0) {
+            vesting = IVesting(new Vesting(config.saleToken, address(fundraiser)));
+        }
+
+        // Initialize the parameters struct
+        Fundraiser.FundraiserParams memory params = Fundraiser.FundraiserParams({
+            saleToken: config.saleToken,
+            raiseToken: config.raiseToken,
+            projectName: config.projectName,
+            logoUrl: config.logoUrl,
+            description: config.description,
+            websiteLink: config.websiteLink,
+            campaign: campaign,
+            vestingStartDelta: config.vestingStartDelta,
+            vestingDuration: config.vestingDuration,
+            positionManager: POSITION_MANAGER,
+            vesting: vesting,
+            poolFee: config.poolFee,
+            poolLiquidity: config.poolLiquidity,
+            liquidityLockDuration: config.liquidityLockDuration
+        });
+
+        // Initialize the fundraiser
+        fundraiser.initialize(params);
+
+        emit FundraiserCreated(address(fundraiser), msg.sender, fundraiserID);
+        fundraisers[fundraiserID++] = address(fundraiser);
+        return address(fundraiser);
+    }
+    // required to prevent stack too deep
+    function _decodeFundraiserParams(bytes memory fundraiserParams) internal pure returns (Config memory) {
+
         (
             string memory projectName,
             string memory description,
@@ -77,37 +127,27 @@ contract FundraiserFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable
             address raiseToken,
             uint256 vestingStartDelta,
             uint256 vestingDuration,
-            uint24 poolFee
-        ) = abi.decode(fundraiserParams, (string, string, string, string, address, address, uint256, uint256, uint24));
+            uint24 poolFee,
+            uint8 poolLiquidity,
+            uint256 liquidityLockDuration
+        ) = abi.decode(fundraiserParams, (string, string, string, string, address, address, uint256, uint256, uint24, uint8, uint256));
 
-        // Initialize the vesting contract if vesting is enabled
-        IVesting vesting = IVesting(address(0));
-        if (vestingDuration > 0) {
-            vesting = IVesting(new Vesting(saleToken, address(fundraiser)));
-        }
-
-        // Initialize the parameters struct
-        Fundraiser.FundraiserParams memory params = Fundraiser.FundraiserParams({
-            saleToken: saleToken,
-            raiseToken: raiseToken,
+        // Combine the values into a struct
+        Config memory config = Config({
             projectName: projectName,
-            logoUrl: logoUrl,
             description: description,
             websiteLink: websiteLink,
-            campaign: campaign,
+            logoUrl: logoUrl,
+            saleToken: saleToken,
+            raiseToken: raiseToken,
             vestingStartDelta: vestingStartDelta,
             vestingDuration: vestingDuration,
-            positionManager: POSITION_MANAGER,
-            vesting: vesting,
-            poolFee: poolFee
+            poolFee: poolFee,
+            poolLiquidity: poolLiquidity,
+            liquidityLockDuration: liquidityLockDuration
         });
 
-        // Initialize the fundraiser
-        fundraiser.initialize(params);
-
-        emit FundraiserCreated(address(fundraiser), msg.sender, fundraiserID);
-        fundraisers[fundraiserID++] = address(fundraiser);
-        return address(fundraiser);
+        return config;
     }
 
     /**

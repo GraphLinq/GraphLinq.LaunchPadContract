@@ -17,7 +17,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "uniswap-v3-periphery/interfaces/IQuoter.sol";
+import "uniswap-v3-periphery/interfaces/IQuoterV2.sol";
+import "forge-std/console.sol";
 
 contract FundraiserFactoryTest is Test {
     FundraiserFactory private factory;
@@ -28,7 +29,7 @@ contract FundraiserFactoryTest is Test {
     MockERC20 private raiseToken;
     uint8 private stealthLaunchID;
     uint8 private fairLaunchID;
-    IQuoter private quoter;
+    IQuoterV2 private quoter;
 
     function setUp() public {
         owner = address(this);
@@ -53,7 +54,7 @@ contract FundraiserFactoryTest is Test {
         raiseToken = new MockERC20("Raise Token", "RAISE");
 
         // Initialize Uniswap V3 router and quoter
-        quoter = IQuoter(address(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6)); // Replace with the actual address on final chain
+        quoter = IQuoterV2(address(0x287a7beF47684D388fa56BFaB859501f9e515B9D));
     }
 
     function testCreateStealthLaunchFundraiser() public {
@@ -67,7 +68,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
             86400,  // Vesting duration of 24 hours
-            3000    // pool fee
+            3000,    // pool fee
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -98,7 +101,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
             86400,  // Vesting duration of 24 hours
-            3000    // pool fee
+            3000,    // pool fee
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -130,7 +135,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
             86400, // Vesting duration of 24 hours
-            3000   // pool fee
+            3000,   // pool fee
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -169,7 +176,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
             86400,  // Vesting duration of 24 hours
-            3000    // pool fee
+            3000,    // pool fee
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -214,7 +223,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
             86400,  // Vesting duration of 24 hours
-            3000
+            3000,
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -242,13 +253,9 @@ contract FundraiserFactoryTest is Test {
         vm.warp(block.timestamp + 3600);
 
         // Finalize the fundraiser
-        fundraiser.finalize();
-
-        // Initialize the swap pair
-        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(400 * 10**18);
         saleToken.approve(fundraiserAddress, requiredSaleTokens);
-        raiseToken.approve(fundraiserAddress, 100 * 10**18);
-        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
+        fundraiser.finalize();
     }
 
     function testClaimTokens() public {
@@ -262,7 +269,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
             86400,  // Vesting duration of 24 hours
-            3000    // pool fee
+            3000,    // pool fee
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -274,8 +283,8 @@ contract FundraiserFactoryTest is Test {
         address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
-        // Mint sale tokens to the fundraiser
-        saleToken.mint(fundraiserAddress, 10000 * 10**18);
+        // Mint sale tokens to me
+        saleToken.mint(address(this), 10000 * 10**18);
 
         // Mint raise tokens to the contributor
         raiseToken.mint(address(this), 1000 * 10**18);
@@ -290,13 +299,9 @@ contract FundraiserFactoryTest is Test {
         vm.warp(block.timestamp + 3600);
 
         // Finalize the fundraiser
-        fundraiser.finalize();
-
-        // Initialize the swap pair
-        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(1400 * 10**18); //sold + liquidity
         saleToken.approve(fundraiserAddress, requiredSaleTokens);
-        raiseToken.approve(fundraiserAddress, 100 * 10**18);
-        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
+        fundraiser.finalize();
 
         // Fast forward time to after the vesting start
         vm.warp(block.timestamp + 3600);
@@ -318,7 +323,10 @@ contract FundraiserFactoryTest is Test {
             address(saleToken),
             address(raiseToken),
             3600,  // Vesting starts 1 hour after finalization
-            86400  // Vesting duration of 24 hours
+            86400,  // Vesting duration of 24 hours
+            3000,    // pool fee
+            0, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -329,9 +337,6 @@ contract FundraiserFactoryTest is Test {
 
         address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
-
-        // Mint sale tokens to the fundraiser
-        saleToken.mint(fundraiserAddress, 10000 * 10**18);
 
         // Mint raise tokens to the contributor
         raiseToken.mint(address(this), 500 * 10**18);
@@ -369,7 +374,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,
             86400,
-            3000
+            3000,
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -408,7 +415,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             3600,
             86400,
-            3000
+            3000,
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -436,13 +445,9 @@ contract FundraiserFactoryTest is Test {
         vm.warp(block.timestamp + 3600);
 
         // Finalize the fundraiser
-        fundraiser.finalize();
-
-        // Initialize the swap pair
-        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(400 * 10**18);
         saleToken.approve(fundraiserAddress, requiredSaleTokens);
-        raiseToken.approve(fundraiserAddress, 100 * 10**18);
-        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
+        fundraiser.finalize();
 
         // Fast forward time to after the vesting start
         vm.warp(block.timestamp + 3600);
@@ -465,7 +470,9 @@ contract FundraiserFactoryTest is Test {
             address(raiseToken),
             0,  // No vesting
             0,   // No vesting duration
-            3000
+            3000,
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -493,19 +500,70 @@ contract FundraiserFactoryTest is Test {
         vm.warp(block.timestamp + 3600);
 
         // Finalize the fundraiser
-        fundraiser.finalize();
-
-        // Initialize the swap pair
-        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(100 * 10**18);
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(400 * 10**18);
         saleToken.approve(fundraiserAddress, requiredSaleTokens);
-        raiseToken.approve(fundraiserAddress, 100 * 10**18);
-        fundraiser.provideLiquidity(100 * 10**18, -887220, 887220);
+        fundraiser.finalize();
 
         // Claim tokens
         fundraiser.claimTokens();
 
         // Assertions
         assertTrue(fundraiser.claimed(address(this)), "Tokens should be claimed");
+    }
+
+    // Test claiming liquidity token
+    function testClaimLiquidityToken() public {
+        bytes memory fundraiserParams = abi.encode(
+            "Claim Tokens without Vesting Test",
+            "Testing claiming tokens without vesting",
+            "https://example.com",
+            "https://logourl",
+            address(saleToken),
+            address(raiseToken),
+            0,  // No vesting
+            0,   // No vesting duration
+            3000,
+            30, // liquidity %
+            3600 // liquidity lock duration
+        );
+
+        bytes memory campaignParams = abi.encode(
+            block.timestamp + 3600,
+            1000 * 10**18,
+            1 * 10**18
+        );
+
+        address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
+        Fundraiser fundraiser = Fundraiser(fundraiserAddress);
+
+        // Mint sale tokens to the fundraiser
+        saleToken.mint(fundraiserAddress, 10000 * 10**18);
+
+        // Mint raise tokens to the contributor
+        raiseToken.mint(address(this), 1000 * 10**18);
+
+        // Approve the fundraiser to spend raise tokens
+        IERC20(address(raiseToken)).approve(fundraiserAddress, 1000 * 10**18);
+
+        // Contribute to the fundraiser
+        fundraiser.contribute(1000 * 10**18);
+
+        // Fast forward time to after the campaign end time
+        vm.warp(block.timestamp + 3600);
+
+        // Finalize the fundraiser
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(400 * 10**18);
+        saleToken.approve(fundraiserAddress, requiredSaleTokens);
+        fundraiser.finalize();
+
+        (bool success, ) = address(fundraiser).call(abi.encodeWithSignature("claimLiquidityToken()"));
+        require(!success);
+
+        vm.warp(block.timestamp + 3600);
+
+        fundraiser.claimLiquidityToken();
+
+        
     }
 
     function testInitSwapPairAndCheckPrice() public {
@@ -527,6 +585,7 @@ contract FundraiserFactoryTest is Test {
             saleToken, 
             1 * 10**18 // pricePerToken
         );
+
     }
 
     function _testInitSwapPairAndCheckPrice(
@@ -544,7 +603,9 @@ contract FundraiserFactoryTest is Test {
             address(raise), //rase
             3600,  // Vesting starts 1 hour after finalization
             86400,  // Vesting duration of 24 hours
-            3000    // Pool fee
+            3000,    // Pool fee
+            30, // liquidity %
+            0 // liquidity lock duration
         );
 
         bytes memory campaignParams = abi.encode(
@@ -557,31 +618,40 @@ contract FundraiserFactoryTest is Test {
         address payable fundraiserAddress = payable(factory.createFundraiser(fundraiserParams, campaignParams, fairLaunchID));
         Fundraiser fundraiser = Fundraiser(fundraiserAddress);
 
-        // Finalize the fundraiser
-        fundraiser.finalize();
+        // Mint raise tokens to the contributor
+        raise.mint(address(this), 1000 * 10**18);
 
-        // Initialize the swap pair
-        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(1000 * 10**18);
+        // Approve the fundraiser to spend raise tokens
+        IERC20(address(raise)).approve(fundraiserAddress, 1000 * 10**18);
+
+        // Contribute to the fundraiser
+        fundraiser.contribute(1000 * 10**18);
+
+        // Finalize the fundraiser
+        (uint256 requiredSaleTokens, ) = fundraiser.getRequiredAmountsForLiquidity(1400 * 10**18);
         sale.mint(address(this), 100000 * 10**18);
         raise.mint(address(this), 100000 * 10**18);
         sale.approve(fundraiserAddress, requiredSaleTokens);
-        raise.approve(fundraiserAddress, 1000 * 10**18);
-        fundraiser.provideLiquidity(1000 * 10**18, -887220, 887220);
+        fundraiser.finalize();
 
         // Swap tokens to check the price
         uint256 amountIn = 1 * 10**18; // Amount to swap
-        uint256 expectedAmountOut = quoter.quoteExactInputSingle(
-                address(raise),
-                address(sale),
-                3000,
-                amountIn,
-                0
-            );
+        (uint256 expectedAmountOut,,,) = quoter.quoteExactInputSingle(
+            IQuoterV2.QuoteExactInputSingleParams({
+                tokenIn: address(raise),
+                tokenOut: address(sale),
+                fee: 3000,
+                amountIn: amountIn,
+                sqrtPriceLimitX96: 0
+            })
+        );
 
         // Calculate the theoretical amount out using pricePerToken and accounting for the fee
         uint256 feePercentage = 3000; // Pool fee (3000 for 0.3%)
         uint256 feeDeductedAmountIn = (amountIn * (1000000 - feePercentage)) / 1000000;
         uint256 theoreticalAmountOut = (feeDeductedAmountIn * 10**18) / pricePerToken;
+
+        console.log("Expected amount out:", expectedAmountOut, "Theoretical amount out:", theoreticalAmountOut);
 
         // Assert that the expected amount out from the quoter matches the theoretical amount out
         assertApproxEqual(expectedAmountOut, theoreticalAmountOut, 0.01 * 10**18, "Quoter output does not match theoretical price");

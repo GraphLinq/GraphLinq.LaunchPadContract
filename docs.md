@@ -16,7 +16,6 @@ The `Fundraiser` contract is the central contract for managing fundraising campa
 - `setFailed()`: Marks the fundraiser as failed.
 - `claimFunds()`: Allows users to claim their funds back if the fundraiser fails.
 - `claimTokens()`: Allows users to claim their purchased tokens after the fundraiser is finalized.
-- `initSwapPair(uint24 poolFee, int24 tickLower, int24 tickUpper)`: Initializes a Uniswap V3 pool for the tokens.
 
 ## 2. FundraiserFactory
 The `FundraiserFactory` contract is responsible for creating and managing fundraisers. It registers different campaign types and creates fundraisers based on the specified campaign type.
