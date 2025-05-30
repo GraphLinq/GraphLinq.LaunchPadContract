@@ -9,9 +9,7 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployScript is Script {
     function run() public {
-        // Start broadcasting transactions to the network
         vm.startBroadcast();
-
         // Deploy the factories
         FundraiserFactory fundraiserFactoryImplementation = new FundraiserFactory();
         StealthLaunchFactory stealthLaunchFactory = new StealthLaunchFactory();
@@ -34,9 +32,7 @@ contract DeployScript is Script {
         console.log("FundraiserFactory address:", address(fundraiserFactoryImplementation));
         console.log("StealthLaunchFactory address:", address(stealthLaunchFactory));
         console.log("FairLaunchFactory address:", address(fairLaunchFactory));
-        
-
-        // End broadcasting transactions
+    
         vm.stopBroadcast();
     }
 }
