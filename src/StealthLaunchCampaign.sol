@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity 0.8.19;
 
 import "./interfaces/ICampaign.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -25,7 +25,8 @@ contract StealthLaunchCampaign is ICampaign, Ownable {
      * @param data Encoded data containing MAX_CAP and PRICE_PER_TOKEN
     */
     constructor(address owner_, bytes memory data)
-    Ownable(owner_) {
+    Ownable() {
+        _transferOwnership(owner_);
         (MAX_CAP, PRICE_PER_TOKEN) = abi.decode(data, (uint256, uint256));
     }
 

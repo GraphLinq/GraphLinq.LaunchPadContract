@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity 0.8.19;
 
 import "./interfaces/ICampaign.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -25,7 +25,8 @@ contract FairLaunchCampaign is ICampaign, Ownable {
      * @param owner_ Address of the owner of the campaign.
      * @param data Encoded data containing END_TIME, MINIMUM_GOAL, and PRICE_PER_TOKEN.
      */
-    constructor(address owner_, bytes memory data) Ownable(owner_) {
+    constructor(address owner_, bytes memory data) Ownable() {
+        _transferOwnership(owner_);
         // Decode the data to initialize the campaign parameters
         (END_TIME, MINIMUM_GOAL, PRICE_PER_TOKEN) = abi.decode(data, (uint256, uint256, uint256));
     }
